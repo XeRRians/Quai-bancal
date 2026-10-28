@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#1b1c19"/>
+  <g transform="translate(256 270) rotate(-8)">
+    <rect x="-150" y="-120" width="300" height="230" rx="10" fill="#c8955a"/>
+    <rect x="-30" y="-120" width="60" height="230" fill="#f5c518"/>
+    <rect x="-110" y="-40" width="220" height="80" rx="6" fill="#f3efe2"/>
+    <text x="0" y="18" text-anchor="middle" font-family="Impact, Arial Black, sans-serif" font-size="58" fill="#1b1c19">QUAI</text>
+  </g>
+  <rect x="0" y="440" width="512" height="72" fill="#f5c518"/>
+  <g fill="#1b1c19">
+    <path d="M0 440h40l-40 72z"/><path d="M80 440h40l-40 72h-40z"/><path d="M160 440h40l-40 72h-40z"/><path d="M240 440h40l-40 72h-40z"/><path d="M320 440h40l-40 72h-40z"/><path d="M400 440h40l-40 72h-40z"/><path d="M480 440h32v12l-32 60h-40z"/>
+  </g>
+</svg>

@@ -1,0 +1,10 @@
+# Déploiement Render : un seul service web qui sert le jeu et le serveur multi
+services:
+  - type: web
+    name: quai-bancal
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /sante

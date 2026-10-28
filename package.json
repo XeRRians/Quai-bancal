@@ -1,0 +1,16 @@
+{
+  "name": "quai-bancal",
+  "version": "0.1.0",
+  "description": "Quai Bancal : jeu d'entrepôt multijoueur à physique bancale (navigateur + mobile)",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Quai Bancal",
+  "short_name": "Quai Bancal",
+  "description": "Jeu d'entrepôt multijoueur à physique bancale : livre les colis, embête tes collègues, échappe au patron.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#1b1c19",
+  "theme_color": "#1b1c19",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
