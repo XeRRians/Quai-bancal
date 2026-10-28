@@ -164,6 +164,16 @@ wss.on('connection', ws => {
         for (const j of salon.joueurs.values()) if (j.id !== salon.hote) envoyer(j.ws, msg);
         break;
       }
+      // Un joueur change de tenue au vestiaire
+      case 'tenue': {
+        if (!salon) return;
+        const j = salon.joueurs.get(ws.idJoueur);
+        if (!j) return;
+        j.look = nettoyerLook(m.look);
+        j.bonus = Array.isArray(m.bonus) ? m.bonus.slice(0, 10).map(b => nettoyerTexte(b, 20)) : [];
+        diffuserSalon(salon);
+        break;
+      }
       case 'ouvert': {
         if (!salon || ws.idJoueur !== salon.hote) return;
         salon.ouvert = !!m.v;

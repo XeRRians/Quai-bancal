@@ -32,9 +32,11 @@ Chaque nouveau commit sur la branche principale redéploie le jeu automatiquemen
 
 ## Jouer à plusieurs
 
-1. Ouvre l'adresse du jeu, écris ton pseudo, puis **Créer une partie**.
-2. Appuie sur **Copier le lien** et envoie-le à tes potes (ou donne-leur le code à 4 lettres).
-3. Quand tout le monde est dans le vestiaire, **Lancer le service**.
+1. Ouvre l'adresse du jeu et **entre dans le vestiaire**.
+2. Va au **tableau des collègues**, écris ton pseudo, puis **Créer une partie**.
+3. **Copier le lien** et envoie-le à tes potes (ou donne-leur le code à 4 lettres).
+4. Choisis la nuit au **tableau des nuits**, passe aux **casiers** pour ta tenue.
+5. Tout le monde devant la **grande porte** : elle s'ouvre au bout de 3 secondes et le service commence.
 
 Astuce : sur téléphone, « Ajouter à l'écran d'accueil » pour jouer en plein écran comme une vraie appli.
 
