@@ -569,7 +569,7 @@ $('game').appendChild(renderer.domElement);
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x1b1c19);
 scene.fog=new THREE.Fog(0x1b1c19,34,70);
-const camera=new THREE.PerspectiveCamera(45,1,0.1,140);
+const camera=new THREE.PerspectiveCamera(45,1,0.8,120);
 const hemi=new THREE.HemisphereLight(0xfff1dc,0x2b2a25,0.8); scene.add(hemi);
 const torch=new THREE.PointLight(0xfff1c0,0,9,1.6); scene.add(torch);
 const sun=new THREE.DirectionalLight(0xfff0d6,0.8);
@@ -842,7 +842,7 @@ function buildWorld(){
   rack(-11.4,-5,8); rack(-11.4,4,7); rack(11.4,5.6,4.8); rack(11.4,-5.8,5.6);
   // Fûts et palettes vides dans les coins
   for(const [x,z,c] of [[-10.9,12.6,0x2f6db5],[-10.2,13.1,0xd23b2e],[-11.2,13.3,0x2f6db5],[10.9,12.9,0x4fae5e]]){addStatic(0.3,0.45,0.3,x,z,null);
-    mesh(new THREE.CylinderGeometry(0.3,0.3,0.9,16),M(c),x,0.45,z);mesh(new THREE.CylinderGeometry(0.31,0.31,0.04,16),M(0x2b2c28),x,0.88,z);}
+    mesh(new THREE.CylinderGeometry(0.3,0.3,0.9,16),M(c),x,0.45,z);mesh(new THREE.CylinderGeometry(0.31,0.31,0.03,16),M(0x2b2c28),x,0.915,z);}
   addStatic(0.6,0.5,0.6,10.4,11.6,null);
   for(let i=0;i<6;i++){const pl=mesh(boxGeo(1.2,0.14,1.2),M(i%2?0xc29560:0xb48650),10.4,0.07+i*0.15,11.6);pl.rotation.y=rnd(-0.08,0.08);}
   // Taches d'huile et halos de lumière au sol
@@ -1335,7 +1335,7 @@ function updEvents(dt){
 }
 
 // ====== Le patron ======
-const BOSS_WP=[[-7,6],[0,1],[7,6],[8.3,0.5],[7,-7],[0,-10],[-7,-7],[0,6],[3,-2]];
+const BOSS_WP=[[-7,6],[0,1],[7,6],[8.3,0.5],[4.5,-4],[0,-10],[-7,-7],[0,6],[3,-2]];
 const OFFICE={x:-10.2,z:-12.3};
 const VIEW_R=9, VIEW_A=0.6;
 const viewR=()=>(ev&&ev.id==='panne'?3.5:ev&&ev.id==='inspection'?12:VIEW_R)*DIFFS[DIFF].view;
@@ -1390,7 +1390,17 @@ function bossThink(dt){
     const w=BOSS_WP[a.wp]; tx=w[0];tz=w[1];
   }
   const dx=tx-p.x,dz=tz-p.z,d=Math.hypot(dx,dz);
-  if(d>stop){boss.input.x=dx/d;boss.input.z=dz/d;return;}
+  if(d>stop){
+    // Anti-blocage : s'il n'avance plus (chariot, colis, collègue), il contourne puis change de cible
+    const sp=Math.hypot(boss.body.velocity.x,boss.body.velocity.z);
+    if(a.side>0){a.side-=dt;boss.input.x=a.sx;boss.input.z=a.sz;return;}
+    if(sp<0.35){a.stuck=(a.stuck||0)+dt;
+      if(a.stuck>1.2){a.stuck=0;a.stuckN=(a.stuckN||0)+1;boss.input.jump=true;
+        const ang=Math.atan2(dx,dz)+(Math.random()<0.5?1.6:-1.6);a.sx=Math.sin(ang);a.sz=Math.cos(ang);a.side=0.9;
+        if(a.stuckN>=2){a.stuckN=0;if(a.mode==='ronde'){a.wp=(a.wp+1)%BOSS_WP.length;a.arrived=false;}else if(a.mode==='chase'){a.mode='ronde';}}
+        return;}}
+    else{a.stuck=0;a.stuckN=0;}
+    boss.input.x=dx/d;boss.input.z=dz/d;return;}
   boss.input.x=boss.input.z=0;
   if(a.mode==='chase'){boss.facing=Math.atan2(dx,dz);return;}
   if(a.mode==='bureau'){if(!a.inOffice){a.inOffice=true;a.t=rnd(10,14);if(state==='play')toast('Le patron est au bureau : champ libre !');}return;}
@@ -1953,6 +1963,20 @@ function lobbyLogic(dt){
   else doorT=Math.max(0,doorT-dt*2);
 }
 
+// ====== Marquages au sol sans scintillement ======
+// Tout ce qui est posé à plat sur le sol est dessiné « au-dessus » grâce à un décalage de profondeur
+function fixDecals(){
+  scene.traverse(o=>{
+    if(!o.isMesh||o.parent!==scene) return;
+    if(Math.abs(o.rotation.x+Math.PI/2)>0.01||o.position.y>0.05) return;
+    const g=o.geometry.parameters||{}; if((g.width||0)>20) return; // le sol lui-même
+    const mat=o.material.clone(); mat.polygonOffset=true;
+    const lvl=1+Math.round(o.position.y*300);
+    mat.polygonOffsetFactor=-lvl; mat.polygonOffsetUnits=-lvl*4; mat.depthWrite=false;
+    o.material=mat; o.renderOrder=lvl;
+  });
+}
+
 // ====== Multijoueur ======
 const TYPE_CODES=['std','big','fragile','poules','bomb','urgent','pallet','piano','aquarium','matelas','ballons','balles','ball','ext'];
 const keyOf=ch=>ch.netId!=null?ch.netId:ch.key;
@@ -2295,7 +2319,7 @@ function frame(now){
 // Attendre les polices pour les étiquettes des colis, sans bloquer plus d'une seconde et demie
 const fontsReady=document.fonts?Promise.race([Promise.all([document.fonts.load('40px Bungee'),document.fonts.load('700 30px "Barlow Condensed"')]),new Promise(r=>setTimeout(r,1500))]):Promise.resolve();
 applyOpt();
-fontsReady.catch(()=>{}).then(()=>{buildWorld();buildRoom();resetGame();placeInRoom(player,0);requestAnimationFrame(t=>{last=t;frame(t);});});
+fontsReady.catch(()=>{}).then(()=>{buildWorld();buildRoom();fixDecals();resetGame();placeInRoom(player,0);requestAnimationFrame(t=>{last=t;frame(t);});});
 })();
 </script>
 </body>
