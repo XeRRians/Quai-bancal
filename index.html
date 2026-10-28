@@ -1537,9 +1537,11 @@ function syncTouch(){
 const K=new Set();
 const moveKeys={left:['arrowleft','a','q'],right:['arrowright','d'],up:['arrowup','w','z'],down:['arrowdown','s']};
 addEventListener('keydown',e=>{
+  // On ne capte rien pendant qu'on écrit (pseudo, code de partie)
+  const tg=e.target&&e.target.tagName; if(tg==='INPUT'||tg==='TEXTAREA') return;
   const k=e.key.toLowerCase();
   if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) e.preventDefault();
-  if(!K.has(k)&&state==='play'){
+  if(!K.has(k)&&(state==='play'||state==='lobby')){
     if(k===' ') doAct('jump'); else if(k==='x'||(k==='f'&&!player.inVeh)) doAct('punch'); else if(k==='e') doAct('grab'); else if(k==='g') doAct('throw'); else if(k==='c') doAct('car');
   }
   K.add(k);
@@ -1738,7 +1740,11 @@ function resumeGame(){$('pause').hidden=true;$('options').hidden=true;if(state!=
 $('pauseBtn').addEventListener('click',pauseGame);
 $('resumeBtn').addEventListener('click',resumeGame);
 $('quitBtn').addEventListener('click',()=>{if(NET.mode!=='solo'){leaveToMenu('');return;}$('pause').hidden=true;if(NET.prevState==='play'){resetGame();toRoom();}else{state='menu';$('pauseBtn').hidden=true;$('menu').hidden=false;}});
-addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(k==='escape'||k==='p'){if((state==='play'||state==='lobby')&&$('pause').hidden&&!anyOverlay())pauseGame();else if(!$('pause').hidden&&$('options').hidden)resumeGame();}});
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();
+  // Échap ferme d'abord les tableaux et les casiers du vestiaire
+  if(k==='escape'){const open=['board','maps','lobby','shop'].find(id=>!$(id).hidden);if(open){$(open).hidden=true;if(open==='shop'&&shopReturn)$(shopReturn).hidden=false;sfx('ui');return;}}
+  const tg=e.target&&e.target.tagName; if(k==='p'&&(tg==='INPUT'||tg==='TEXTAREA')) return;
+  if(k==='escape'||k==='p'){if((state==='play'||state==='lobby')&&$('pause').hidden&&!anyOverlay())pauseGame();else if(!$('pause').hidden&&$('options').hidden)resumeGame();}});
 // Écran d'options
 let optReturn='menu';
 function renderOpt(){
