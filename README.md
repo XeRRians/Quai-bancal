@@ -7,6 +7,14 @@ Livre les colis sur le bon quai, embête tes collègues quand le patron a le dos
 - Gérard et Kévin, deux intérimaires pilotés par l'IA, peuvent compléter l'équipe.
 - Mode solo disponible sans connexion au serveur.
 
+## L'atelier
+
+Les objets en vrac (vase, télé, poule, bocal, ordi) arrivent sans carton :
+
+1. **Table d'emballage** : pose l'objet sur la table du bon matériau (papier bulle, caisse ajourée ou polystyrène) et tape vite pour scotcher. Mauvais matériau = colis fragile.
+2. **Étiqueteuse** : reste une demi-seconde sur la dalle de la destination, pose le colis, puis imprime.
+3. **Quai** : livre-le au quai de son étiquette. Vérifie qu'elle correspond au bon de commande, sinon c'est toi qui paies !
+
 ## Comment ça marche
 
 - `index.html` : tout le jeu (Three.js + cannon.js chargés depuis un CDN).
