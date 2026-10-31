@@ -147,6 +147,13 @@ body.inlobby .lobbyhud{display:flex}
 body.inlobby .plate.needs{display:none}
 .lobbyhud .plate{align-items:center;min-width:200px}
 .lobbyhud .val{font-size:18px}
+.emobtn{position:fixed;right:max(16px,calc(env(safe-area-inset-right,0px) + 12px));top:calc(env(safe-area-inset-top,0px) + 196px);z-index:6;appearance:none;width:54px;height:54px;border-radius:50%;border:2px solid var(--safety);background:rgba(38,39,34,.92);color:var(--safety);font:22px/1 var(--f-display);cursor:pointer}
+body.inlobby .emobtn{top:calc(env(safe-area-inset-top,0px) + 70px)}
+#wheel{position:fixed;inset:0;z-index:21;display:flex;align-items:center;justify-content:center;background:rgba(16,16,14,.55)}
+#wheel .ring{position:relative;width:min(84vw,330px);height:min(84vw,330px);border-radius:50%;background:rgba(38,39,34,.92);border:2px solid var(--plate-edge)}
+#wheel .emo{position:absolute;width:86px;height:86px;margin:-43px 0 0 -43px;border-radius:50%;appearance:none;border:2px solid var(--plate-edge);background:var(--asphalt);color:var(--ink);font:700 15px/1.05 var(--f-body);text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
+#wheel .emo:hover,#wheel .emo:focus-visible{border-color:var(--safety);color:var(--safety);outline:none}
+#wheel .mid{position:absolute;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;appearance:none;border:2px solid var(--plate-edge);background:var(--plate);color:var(--muted);font:700 14px var(--f-body);text-transform:uppercase;cursor:pointer}
 #koUI{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 230px);z-index:9;display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none}
 #koUI .kotitle{font-family:var(--f-display);font-size:40px;color:var(--safety);text-shadow:0 3px 0 #000}
 #koBtn{pointer-events:auto;appearance:none;border:0;border-radius:50%;width:150px;height:150px;background:var(--safety);color:var(--asphalt);font:22px/1.1 var(--f-display);box-shadow:0 6px 0 #a8850b;touch-action:manipulation}
@@ -235,6 +242,8 @@ body.inlobby .plate.needs{display:none}
   </div>
 </div>
 <div class="lobbyhud" id="lobbyHud"><div class="plate"><span class="lbl" id="lhDiff">Vestiaire · Nuit normale</span><span class="val" id="lhReady">Prêts 0/1</span></div></div>
+<button class="emobtn" id="emoBtn" type="button" aria-label="Emotes" hidden>☺</button>
+<div id="wheel" hidden><div class="ring" id="ring"><button class="mid" id="wheelClose" type="button">Fermer</button></div></div>
 <div id="koUI" hidden><div class="kotitle">K.O. !</div><button id="koBtn" type="button">SECOUE-<br>TOI !</button><div class="kobar"><i id="koBar"></i></div></div>
 <div id="foamUI" hidden><div id="foamBlobs"></div><div class="foamtip">Essuie la mousse !</div></div>
 <div id="toasts"></div>
@@ -279,6 +288,7 @@ body.inlobby .plate.needs{display:none}
         <kbd>C</kbd><span>Monter / descendre du chariot</span>
         <kbd>R / F</kbd><span>Monter / baisser la fourche</span>
         <kbd>E</kbd><span>Au vestiaire : utiliser un tableau ou les casiers</span>
+        <kbd>T</kbd><span>Roue d'emotes (danses)</span>
       </div>
       <div class="btnrow"><button class="go" id="startBtn" type="button">Entrer dans le vestiaire</button><button class="go ghost" id="optBtn" type="button">Options</button><button id="shopBtn" type="button" hidden></button></div>
       <p class="note">Dans le vestiaire : invite tes potes au tableau des collègues, choisis la nuit, passe aux casiers, puis tout le monde devant la grande porte. Jusqu'à 8 joueurs.</p>
@@ -406,7 +416,7 @@ body.inlobby .plate.needs{display:none}
       </div>
       <div class="bank">Économies <b id="bank">0 €</b></div>
       <div class="tabs" role="tablist">
-        <button type="button" role="tab" data-cat="gilet" aria-selected="true">Gilet</button>
+        <button type="button" role="tab" data-cat="gilet" aria-selected="true">Couleur</button>
         <button type="button" role="tab" data-cat="tete" aria-selected="false">Tête</button>
         <button type="button" role="tab" data-cat="acc" aria-selected="false">Style</button>
         <button type="button" role="tab" data-cat="up" aria-selected="false">Bonus</button>
@@ -419,6 +429,8 @@ body.inlobby .plate.needs{display:none}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
 (function(){
 'use strict';
@@ -625,7 +637,160 @@ const TYPES={
 
 // ====== Personnages ======
 const chars=[];
+// ====== Goofball (modèle Mixamo) ======
+const GOOF={ready:false,src:null,clips:{},H:1.34};
+function goofMaterial(base,tint){
+  const m=base.clone(); const c=new THREE.Color(tint); c.convertSRGBToLinear(); m.userData.tint=c;
+  // Le rouge du corps prend la couleur du joueur ; yeux, langue et bouche restent comme ils sont
+  m.onBeforeCompile=sh=>{sh.uniforms.uTint={value:m.userData.tint};
+    sh.fragmentShader='uniform vec3 uTint;\n'+sh.fragmentShader.replace('#include <map_fragment>',
+      '#include <map_fragment>\n{vec3 cc=diffuseColor.rgb; if(cc.r>0.06&&cc.g<0.05&&cc.b<0.06&&cc.r>cc.g*5.0){diffuseColor.rgb=uTint*clamp(cc.r/0.5,0.0,1.4);}}');};
+  m.customProgramCacheKey=()=>'goofTint';
+  return m;
+}
+function loadGoof(){
+  if(!THREE.GLTFLoader||!THREE.SkeletonUtils||location.protocol==='file:') return;
+  new THREE.GLTFLoader().load('goofball.glb',g=>{
+    let sk=null; g.scene.traverse(o=>{if(o.isSkinnedMesh)sk=o;});
+    if(!sk) return;
+    for(const c of g.animations){
+      // Le saut reste au sol : c'est la physique qui gère la hauteur
+      if(c.name==='Saut') for(const t of c.tracks) if(/Hips\.position$/.test(t.name)){const v=t.values,y0=v[1];for(let i=1;i<v.length;i+=3)v[i]=y0;}
+      GOOF.clips[c.name]=c;
+    }
+    GOOF.src=g.scene; GOOF.mat=sk.material;
+    try{calibrateGoof();}catch(e){console.warn('Goofball : calibration impossible',e);return;}
+    GOOF.ready=true;
+    for(const ch of chars) rebuildVis(ch);
+    if(!$('shop').hidden) refreshPreview();
+  },undefined,()=>{});
+}
+// Calibration (une seule fois) : taille, pied au sol, centre de la tête et du torse mesurés sur la peau animée
+function calibrateGoof(){
+  const model=THREE.SkeletonUtils.clone(GOOF.src); let sk=null; model.traverse(o=>{if(o.isSkinnedMesh)sk=o;});
+  const mx=new THREE.AnimationMixer(model); if(GOOF.clips.Repos){mx.clipAction(GOOF.clips.Repos).play();mx.update(0);}
+  model.updateMatrixWorld(true);
+  const pos=sk.geometry.attributes.position,si=sk.geometry.attributes.skinIndex,sw=sk.geometry.attributes.skinWeight,n=pos.count;
+  const bones=sk.skeleton.bones,bi=name=>bones.findIndex(b=>b.name==='mixamorig'+name);
+  const iHead=bi('Head'),iS1=bi('Spine1'),iS2=bi('Spine2');
+  const world=[];const v=new THREE.Vector3();
+  const sample=()=>{world.length=0;for(let i=0;i<n;i+=2){sk.boneTransform(i,v);world.push([i,sk.localToWorld(v.clone())]);}};
+  sample(); let lo=1e9,hi=-1e9; for(const [,w] of world){lo=Math.min(lo,w.y);hi=Math.max(hi,w.y);}
+  const S=GOOF.H/(hi-lo); model.scale.multiplyScalar(S); model.updateMatrixWorld(true);
+  sample(); lo=1e9; for(const [,w] of world) lo=Math.min(lo,w.y);
+  GOOF.S=S; GOOF.offY=-lo;
+  model.position.y+=GOOF.offY; model.updateMatrixWorld(true); sample();
+  const G4=['getX','getY','getZ','getW'];
+  const wOf=(i,bIdx)=>{let t=0;for(let c=0;c<4;c++) if(si[G4[c]](i)===bIdx) t+=sw[G4[c]](i);return t;};
+  const box=(pred)=>{const bb=new THREE.Box3();for(const [i,w] of world) if(pred(i)) bb.expandByPoint(w);return bb;};
+  const hb=box(i=>wOf(i,iHead)>0.85), cb=box(i=>wOf(i,iS1)+wOf(i,iS2)>0.6);
+  const hc=hb.getCenter(new THREE.Vector3()); const hr=(hb.max.x-hb.min.x)*0.5;
+  hc.z=Math.min(hc.z,(hb.min.z+hb.max.z)/2); hc.y=hb.max.y-hr;           // centre de la boule (les yeux ne comptent pas)
+  const cc=cb.getCenter(new THREE.Vector3()); const cr=(cb.max.z-cb.min.z)*0.5;
+  // Matrice locale (par rapport à l'os) qui donne, dans cette pose, un repère droit centré sur p et à l'échelle k
+  const rel=(bone,p,k)=>{bone.updateMatrixWorld(true);
+    const want=new THREE.Matrix4().compose(p,new THREE.Quaternion(),new THREE.Vector3(k,k,k));
+    return new THREE.Matrix4().copy(bone.matrixWorld).invert().multiply(want);};
+  GOOF.headA=rel(bones[iHead],hc,hr/0.27); GOOF.bodyA=rel(bones[iS1],cc,cr/0.3);
+}
+function makeGoofMesh(vest,hat,boss,look,target){
+  const root=new THREE.Group(),pivot=new THREE.Group();
+  root.add(pivot); (target||scene).add(root);
+  const model=THREE.SkeletonUtils.clone(GOOF.src);
+  const mat=goofMaterial(GOOF.mat,boss?0x3a4660:vest);
+  model.traverse(o=>{if(o.isSkinnedMesh){o.material=mat;o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;}});
+  model.scale.multiplyScalar(GOOF.S); model.position.y+=GOOF.offY;
+  pivot.add(model); pivot.position.y=-0.7;
+  const bone=n=>model.getObjectByName('mixamorig'+n);
+  const B={head:bone('Head'),neck:bone('Neck'),spine:bone('Spine2'),spine1:bone('Spine1'),armL:bone('LeftForeArm'),armR:bone('RightForeArm')};
+  const anchor=(b,m)=>{const a=new THREE.Group();a.matrixAutoUpdate=false;a.matrix.copy(m);b.add(a);return a;};
+  const headA=anchor(B.head,GOOF.headA);
+  const hatG=new THREE.Group(); hatG.position.set(0,-0.55,0); headA.add(hatG);
+  if(boss){accessory('moustache',hatG,true);}
+  else{headwear(look?look.head:'casque',hat,hatG); if(look&&look.acc&&(look.acc==='lunettes'||look.acc==='moustache')) accessory(look.acc,hatG,true);}
+  const bodyA=anchor(B.spine1,GOOF.bodyA);
+  const bodyG=new THREE.Group(); bodyA.add(bodyG);
+  if(boss){mesh(new THREE.BoxGeometry(0.09,0.42,0.03),M(0xd23b2e),0,0.06,0.3,bodyG);}
+  else if(look&&(look.acc==='cape'||look.acc==='noeud')) accessory(look.acc,bodyG,true);
+  model.traverse(o=>{if(o.isMesh&&!o.isSkinnedMesh){o.castShadow=true;}});
+  const mixer=new THREE.AnimationMixer(model);
+  const dummy=()=>new THREE.Object3D();
+  const v={root,pivot,body:bodyG,arms:[dummy(),dummy()],legs:[dummy(),dummy()],head:headA,goof:true,mixer,model,B,actions:{},cur:null};
+  goofPlay(v,'Repos',1);
+  return v;
+}
+function goofPlay(v,name,ts,once){
+  const clip=GOOF.clips[name]; if(!clip) return;
+  let a=v.actions[name]; if(!a){a=v.actions[name]=v.mixer.clipAction(clip);}
+  if(v.cur!==name){
+    const prevA=v.cur&&v.actions[v.cur];
+    a.reset(); a.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,Infinity); a.clampWhenFinished=!!once;
+    a.setEffectiveWeight(1).play();
+    if(prevA) prevA.crossFadeTo(a,0.18,false);
+    v.cur=name;
+  }
+  a.timeScale=ts;
+}
+const EMOTES=[['Danse1','Danse 1'],['Danse2','Danse 2'],['Danse3','Danse 3'],['Danse4','Danse 4'],['Danse5','Danse 5'],['Toupie','Toupie']];
+// Choix de l'animation selon ce que fait le perso, puis petite couche « molle » par-dessus
+function updGoofVis(ch,dt){
+  const v=ch.v,b=ch.body,vel=b.velocity,spd=Math.hypot(vel.x,vel.z);
+  let clip='Repos',ts=1,once=false;
+  if(ch.inVeh){
+    const f=fwd(FL.yaw);
+    v.root.position.set(chassis.position.x-f.x*0.2,chassis.position.y+0.32,chassis.position.z-f.z*0.2);
+    v.root.quaternion.setFromAxisAngle(Y3,FL.yaw); v.pivot.rotation.set(0,0,0); clip='Conduire';
+  } else {
+    v.root.position.copy(b.position);
+    if(ch.ko>0){v.root.quaternion.copy(b.quaternion);v.pivot.rotation.set(0,0,0);clip='Etourdi';ts=1.6;}
+    else{
+      v.root.quaternion.setFromAxisAngle(Y3,ch.facing);
+      const ax=(vel.x-ch.prevV.x)/dt,az=(vel.z-ch.prevV.z)/dt; ch.prevV.x=vel.x; ch.prevV.z=vel.z;
+      const f=fwd(ch.facing),fa=ax*f.x+az*f.z,sa=ax*f.z-az*f.x;
+      const tl=clamp(fa*0.014,-0.35,0.35),tsd=clamp(sa*0.012,-0.3,0.3);
+      ch.leanV+=((tl-ch.lean)*70-ch.leanV*6)*dt; ch.lean+=ch.leanV*dt;
+      ch.sideV+=((tsd-ch.side)*60-ch.sideV*5)*dt; ch.side+=ch.sideV*dt;
+      if(!isFinite(ch.lean)||!isFinite(ch.side)){ch.lean=ch.leanV=ch.side=ch.sideV=0;}
+      v.pivot.rotation.set(ch.lean*0.5,0,ch.side*0.5);
+      const heavy=ch.heavy||(ch.held&&ch.held.mass>40);
+      const emo=ch.emote?ch.emote.i:(ch.emoteId?ch.emoteId-1:-1);
+      if(emo>=0&&EMOTES[emo]){clip=EMOTES[emo][0];}
+      else if(ch.hitT>0){clip='PrendreCoup';once=true;ts=1.4;}
+      else if(ch.punchT>0){clip='Droite';once=true;ts=1.8;}
+      else if(ch.throwT>0){clip='Lancer';once=true;ts=2.2;}
+      else if(ch.workT>0){clip='Pousser';ts=1.6;}
+      else if(Math.abs(vel.y)>2.2){clip='Saut';ts=0.9;}
+      else if(ch.held||ch.holdingExt){clip=heavy?'Pousser':spd>3.6?'CoursePorter':spd>0.4?'MarchePorter':'ReposPorter';ts=heavy?clamp(spd/1.5,0.4,1.4):spd>3.6?spd/4.5:spd>0.4?clamp(spd/1.6,0.6,1.5):1;}
+      else if(ch.drinking||(ch.need&&ch.need.coffeeT>0)){clip='Boire';}
+      else if(ch.foam>0&&spd<0.5){clip='Etourdi';}
+      else if(spd>3.6){clip='Course';ts=clamp(spd/5,0.7,1.5);}
+      else if(spd>0.35){clip='Marche';ts=clamp(spd/2,0.6,1.6);}
+    }
+  }
+  goofPlay(v,clip,ts,once);
+  v.mixer.update(dt);
+  // Couche molle : la tête et les avant-bras ballottent avec les accélérations
+  if(!ch.ko&&!ch.inVeh){
+    const t=performance.now()/1000+(ch.netId||ch.spawn.x);
+    const B=v.B, wob=Math.min(1,spd/4);
+    if(B.head){B.head.rotateX(-ch.lean*0.9+Math.sin(t*7.3)*0.05*wob);B.head.rotateZ(ch.side*1.2+Math.sin(t*5.1)*0.07*wob);}
+    if(B.spine) B.spine.rotateZ(Math.sin(t*4.4)*0.04*wob);
+    if(B.armL) B.armL.rotateZ(Math.sin(t*8.1)*0.12*wob);
+    if(B.armR) B.armR.rotateZ(Math.sin(t*8.1+1.7)*0.12*wob);
+  }
+}
+// Reconstruit l'apparence d'un perso (au chargement du modèle ou après un changement de tenue)
+function rebuildVis(ch){
+  const sp=ch.visSpec; if(!sp) return;
+  const tag=ch.v.tag,pos=ch.v.root.position.clone(),vis=ch.v.root.visible;
+  ch.v.root.parent&&ch.v.root.parent.remove(ch.v.root);
+  ch.v=makeCharMesh(sp.vest,sp.hat,sp.boss,sp.look);
+  if(sp.boss) ch.v.pivot.scale.setScalar(1.1);
+  ch.v.root.position.copy(pos); ch.v.root.visible=vis; if(tag){ch.v.root.add(tag);ch.v.tag=tag;}
+  if(ch.foamG){ch.foamG=null;}
+}
 function makeCharMesh(vest,hat,boss,look,target){
+  if(GOOF.ready) return makeGoofMesh(vest,hat,boss,look,target);
   const root=new THREE.Group(), pivot=new THREE.Group(), body=new THREE.Group();
   pivot.position.y=-0.7; body.position.y=0.7; root.add(pivot); pivot.add(body); (target||scene).add(root);
   const skin=M(0xf0c08a);
@@ -666,10 +831,10 @@ function headwear(kind,hat,body){
     for(let i=0;i<6;i++){const a=i/6*TAU;mesh(new THREE.CylinderGeometry(0,0.05,0.13,6),gold,Math.sin(a)*0.21,0.92,Math.cos(a)*0.21,body);}mesh(new THREE.SphereGeometry(0.04,8,6),M(0xd23b2e),0,0.8,0.215,body);}
   else{mesh(new THREE.SphereGeometry(0.27,14,8,0,TAU,0,Math.PI/2),M(hat),0,0.62,0,body);mesh(new THREE.CylinderGeometry(0.31,0.31,0.03,14),M(hat),0,0.63,0.03,body);}
 }
-function accessory(kind,body){
-  if(kind==='lunettes'){mesh(new THREE.BoxGeometry(0.32,0.08,0.04),M(0x111111),0,0.59,0.235,body);}
-  else if(kind==='moustache'){mesh(new THREE.BoxGeometry(0.2,0.05,0.06),M(0x3a2a1e),0,0.49,0.24,body);}
-  else if(kind==='noeud'){for(const s of [-1,1]){const b=mesh(new THREE.BoxGeometry(0.1,0.08,0.03),M(0xd23b2e),s*0.06,0.31,0.31,body);b.rotation.z=s*0.4;}mesh(new THREE.BoxGeometry(0.04,0.05,0.04),M(0x8f2219),0,0.31,0.32,body);}
+function accessory(kind,body,goof){
+  if(kind==='lunettes'){mesh(new THREE.BoxGeometry(goof?0.6:0.32,0.11,0.05),M(0x111111),0,goof?0.42:0.59,goof?0.2:0.235,body);}
+  else if(kind==='moustache'){mesh(new THREE.BoxGeometry(goof?0.3:0.2,0.06,0.06),M(0x3a2a1e),0,goof?0.27:0.49,goof?0.2:0.24,body);}
+  else if(kind==='noeud'){const ny=goof?0.42:0.31,nz=goof?0.36:0.31;for(const s of [-1,1]){const b=mesh(new THREE.BoxGeometry(0.1,0.08,0.03),M(0xd23b2e),s*0.06,ny,nz,body);b.rotation.z=s*0.4;}mesh(new THREE.BoxGeometry(0.04,0.05,0.04),M(0x8f2219),0,ny,nz+0.01,body);}
   else if(kind==='cape'){const c=mesh(new THREE.BoxGeometry(0.56,0.78,0.03),M(0xd23b2e),0,-0.02,-0.34,body);c.rotation.x=0.14;}
 }
 function nameSprite(text){
@@ -684,6 +849,7 @@ function makeChar(o){
   b.position.set(o.x,1,o.z); W.addBody(b);
   const v=makeCharMesh(o.vest,o.hat,o.boss);
   if(o.boss) v.pivot.scale.setScalar(1.1);
+  const visSpec={vest:o.vest,hat:o.hat,boss:!!o.boss,look:null};
   if(o.label){const s=nameSprite(o.label);s.position.y=1.35;v.root.add(s);v.tag=s;}
   const ch={body:b,v,name:o.name,bot:!!o.bot,facing:0,lean:0,leanV:0,side:0,sideV:0,prevV:{x:0,z:0},walk:0,ko:0,held:null,cons:null,inVeh:false,
     ai:{t:rnd(0.5,2),tx:o.x,tz:o.z,act:0},jumpCd:0,input:{x:0,z:0,jump:false},raw:{mx:0,my:0},spawn:{x:o.x,z:o.z}};
@@ -692,6 +858,7 @@ function makeChar(o){
   b.addEventListener('collide',e=>{const pr=e.body&&e.body.prop;if(!pr||!pr.thrownBy||pr.thrownBy===ch||gameTime-pr.thrownT>2.5)return;
     if(Math.abs(e.contact.getImpactVelocityAlongNormal())<4)return;const by=pr.thrownBy;pr.thrownBy=null;
     koQ.push([ch,pr.body.velocity.x*4,40,pr.body.velocity.z*4,'colis',by]);});
+  ch.visSpec=visSpec;
   b.char=ch; chars.push(ch); return ch;
 }
 const player=makeChar({name:'Toi',x:0,z:2,vest:0xff7a1a,hat:0xf5c518});
@@ -720,12 +887,12 @@ let gameTime=0;
 
 // ====== Boutique et sauvegarde (navigateur du joueur) ======
 const SHOP=[
-  {id:'v_orange',cat:'gilet',name:'Gilet orange',price:0,color:0xff7a1a},
-  {id:'v_fluo',cat:'gilet',name:'Gilet fluo',price:60,color:0xc9e83a},
-  {id:'v_rose',cat:'gilet',name:'Gilet rose bonbon',price:80,color:0xff6fae},
-  {id:'v_bleu',cat:'gilet',name:'Gilet bleu marine',price:100,color:0x2f6db5},
-  {id:'v_noir',cat:'gilet',name:'Gilet ninja',price:150,color:0x242427},
-  {id:'v_or',cat:'gilet',name:'Gilet doré',price:500,color:0xd4a72c},
+  {id:'v_orange',cat:'gilet',name:'Orange',price:0,color:0xff7a1a},
+  {id:'v_fluo',cat:'gilet',name:'Vert fluo',price:60,color:0xc9e83a},
+  {id:'v_rose',cat:'gilet',name:'Rose bonbon',price:80,color:0xff6fae},
+  {id:'v_bleu',cat:'gilet',name:'Bleu marine',price:100,color:0x2f6db5},
+  {id:'v_noir',cat:'gilet',name:'Ninja',price:150,color:0x242427},
+  {id:'v_or',cat:'gilet',name:'Doré',price:500,color:0xd4a72c},
   {id:'h_casque',cat:'tete',name:'Casque de chantier',price:0},
   {id:'h_casquette',cat:'tete',name:'Casquette',price:90},
   {id:'h_bonnet',cat:'tete',name:'Bonnet à pompon',price:120},
@@ -750,7 +917,7 @@ function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catc
 const hasUp=(ch,id)=>ch===player?save.owned.includes(id):!!(ch.ups&&ch.ups.includes(id));
 const item=id=>SHOP.find(x=>x.id===id);
 function lookOf(){return {vest:(item(save.equip.gilet)||SHOP[0]).color,head:save.equip.tete.slice(2),acc:save.equip.acc==='a_none'?null:save.equip.acc.slice(2)};}
-function applyLook(){const L=lookOf();const old=player.v.root;const pos=old.position.clone();scene.remove(old);player.v=makeCharMesh(L.vest,0xf5c518,false,L);player.v.root.position.copy(pos);}
+function applyLook(){const L=lookOf();player.visSpec={vest:L.vest,hat:0xf5c518,boss:false,look:L};rebuildVis(player);}
 applyLook();
 // Aperçu 3D dans la boutique
 let prev=null;
@@ -761,14 +928,14 @@ function ensurePreview(){
   r.setPixelRatio(1); r.setSize(240,272,false);
   const sc=new THREE.Scene(); sc.add(new THREE.HemisphereLight(0xfff1dc,0x2b2a25,0.9));
   const dl=new THREE.DirectionalLight(0xffffff,0.7); dl.position.set(2,4,3); sc.add(dl);
-  const cam=new THREE.PerspectiveCamera(32,240/272,0.1,20); cam.position.set(0,1.0,3.6); cam.lookAt(0,0.15,0);
+  const cam=new THREE.PerspectiveCamera(32,240/272,0.1,20); cam.position.set(0,0.95,4.3); cam.lookAt(0,0.12,0);
   prev={r,sc,cam,ch:null}; return prev;
 }
 function refreshPreview(){
   const P=ensurePreview(); if(!P) return;
   if(P.ch) P.sc.remove(P.ch.root);
   const L=lookOf(); P.ch=makeCharMesh(L.vest,0xf5c518,false,L,P.sc);
-  P.ch.root.position.y=0.1; P.ch.arms[0].rotation.z=-0.15; P.ch.arms[1].rotation.z=0.15;
+  P.ch.root.position.y=0.15; P.ch.arms[0].rotation.z=-0.15; P.ch.arms[1].rotation.z=0.15;
 }
 let shopCat='gilet', shopReturn='menu';
 function renderShop(){
@@ -1141,7 +1308,7 @@ function throwHeld(ch){
   if(h.char){koQ.push([h.char,f.x*9*m,6*m,f.z*9*m,'lancer']);
     if(h.char===boss) betise(ch,'lancer le patron',4,true); else betise(ch,'lancer un collègue',2); return;}
   if(h.prop){h.prop.thrownBy=ch;h.prop.thrownT=gameTime;}
-  sfx('throw',ch.body.position);
+  sfx('throw',ch.body.position); ch.throwT=0.45; ch.emote=null;
   h.applyImpulse(new CANNON.Vec3(f.x*9*m*s,5*m*s,f.z*9*m*s),h.position);
   h.angularVelocity.set(rnd(-4,4),rnd(-4,4),rnd(-4,4));
 }
@@ -1177,13 +1344,22 @@ function actPunch(ch){punch(ch||player);}
 // Secouer pour se réveiller plus vite ; essuyer la mousse
 function actWake(ch){if(ch.ko>0.35){ch.ko=Math.max(0.3,ch.ko-0.32);ch.body.angularVelocity.y+=rnd(-3,3);}}
 function actWipe(ch){ch.foam=0;}
+// Emotes : danse jusqu'à ce qu'on bouge ; danser sous les yeux du patron, c'est une bêtise
+function actEmote(ch,i){
+  if(ch.inVeh||ch.ko>0||!EMOTES[i]) return;
+  if(ch.held) release(ch);
+  const clip=GOOF.clips[EMOTES[i][0]];
+  ch.emote={i,t:clip?Math.min(clip.duration,14):8};
+  if(state==='play'&&sees(ch)) betise(ch,'danser au boulot',0.5);
+}
 const ACTS={jump:actJump,grab:actGrab,throw:actThrow,car:actCar,punch:actPunch,wake:actWake,wipe:actWipe};
+EMOTES.forEach((e,i)=>ACTS['emote'+i]=ch=>actEmote(ch,i));
 // Action du joueur local : exécutée ici, ou envoyée à l'hôte
 function doAct(name){
   if(name==='wake'||name==='wipe'){if(isClient()){NET.acts.push(name);sendCmd();}else ACTS[name](player);return;}
   if((state!=='play'&&state!=='lobby')||anyOverlay()) return;
   if(state==='lobby'&&name==='grab'&&!player.held){const st=nearStation(player);if(st){openStation(st);return;}}
-  if(isClient()){NET.acts.push(name);if(name==='punch')player.punchT=0.22;sendCmd();return;}
+  if(isClient()){NET.acts.push(name);if(name==='punch')player.punchT=0.22;if(name.startsWith('emote'))player.emoteId=+name.slice(5)+1;sendCmd();return;}
   ACTS[name](player);
 }
 // Mettre une droite : repousse, fait lâcher ce qu'on porte, 3 coups rapprochés = K.O.
@@ -1196,7 +1372,7 @@ function punch(ch){
     if(d>bd||Math.abs(q.y-p.y)>1.2)continue;if((dx*f.x+dz*f.z)/(d||1)<0.35)continue;hit=o;bd=d;}
   if(hit){
     const m=hit.body.mass; hit.dazed=(gameTime-(hit.dazedT||-9)<4?(hit.dazed||0):0)+1; hit.dazedT=gameTime;
-    release(hit); sfx('punch',hit.body.position); rumbleFor(hit,60,0.45); rumbleFor(ch,25,0.2);
+    release(hit); hit.hitT=0.5; hit.emote=null; sfx('punch',hit.body.position); rumbleFor(hit,60,0.45); rumbleFor(ch,25,0.2);
     if(hit.dazed>=3){hit.dazed=0;koQ.push([hit,f.x*m*9,m*5,f.z*m*9,'droite',ch]);floater(hit.body.position,'K.O. !','bad');}
     else{hit.body.applyImpulse(new CANNON.Vec3(f.x*m*6,m*2.5,f.z*m*6),hit.body.position);floater(hit.body.position,hit.dazed===2?'BIM !':'PAF !','bad');}
     if(hit===boss) betise(ch,'frapper le patron',4,true); else betise(ch,'mettre une droite',1.5);
@@ -1478,7 +1654,8 @@ function botThink(ch,dt){
     return;
   }
   // ---- Rien à faire : il attend près du camion le prochain chargement
-  if(job.kind==='flaner'){goTo(ch,job.x,job.z,0.4,0.6);return;}
+  if(job.kind==='flaner'){if(!ch.emote&&!job.danced&&Math.random()<(ch.key==='k'?0.5:0.15)&&safeToPrank(ch)){job.danced=true;actEmote(ch,Math.random()*EMOTES.length|0);}
+    if(ch.emote){ch.input.x=ch.input.z=0;return;}goTo(ch,job.x,job.z,0.4,0.6);return;}
 }
 
 // ====== Besoins, locaux et événements ======
@@ -1698,6 +1875,7 @@ function updHud(dt){
   $('koUI').hidden=!myKo; if(myKo){const left=isClient()?(player.koLeft||1):player.ko,mx=player.koMax||4.5;$('koBar').style.width=Math.round(clamp(left/mx,0,1)*100)+'%';}
   if(doorMesh) doorMesh.position.y=1.5+clamp(doorT/3,0,1)*2.95;
   hudT-=dt; if(hudT>0) return; hudT=0.1;
+  $('emoBtn').hidden=!GOOF.ready||(state!=='play'&&state!=='lobby')||anyOverlay();
   document.body.classList.toggle('inlobby',state==='lobby'||state==='menu'||(state==='pause'&&NET.prevState==='lobby'));
   if(state==='lobby'||state==='menu'){
     $('lhDiff').textContent='Vestiaire · '+DIFFS[DIFF].name+(NET.code?' · '+NET.code:'');
@@ -1816,6 +1994,7 @@ function updExtras(ch,dt){
 }
 function updCharVis(ch,dt){
   updExtras(ch,dt);
+  if(ch.v.goof){updGoofVis(ch,dt);return;}
   const v=ch.v,b=ch.body;
   if(ch.inVeh){
     const f=fwd(FL.yaw);
@@ -2113,7 +2292,7 @@ const STATIONS=[
 ];
 let doorMesh=null, doorT=0, lobbyReady=[0,1];
 function nearStation(ch){if(state!=='lobby')return null;const p=ch.body.position;for(const st of STATIONS) if(Math.hypot(p.x-st.x,p.z-st.z)<1.5) return st;return null;}
-function anyOverlay(){return ['board','lobby','maps','shop','options','pause','menu','endScreen'].some(id=>!$(id).hidden);}
+function anyOverlay(){return ['board','lobby','maps','shop','options','pause','menu','endScreen','wheel'].some(id=>!$(id).hidden);}
 function placeInRoom(ch,i){ch.body.position.set(ROOM.x-2.4+(i%4)*1.6,1,ROOM.z+1.6+(i/4|0)*1.3);ch.body.velocity.set(0,0,0);ch.facing=Math.PI;}
 function signTex(title,sub,bg,fg){return canvasTex(512,256,(g,w,h)=>{g.fillStyle=bg;g.fillRect(0,0,w,h);g.strokeStyle=fg;g.lineWidth=10;g.strokeRect(10,10,w-20,h-20);
   g.fillStyle=fg;g.textAlign='center';g.font='46px '+FONT_D;g.fillText(title,w/2,110);g.font='700 34px '+FONT_B;g.fillText(sub,w/2,175);});}
@@ -2307,6 +2486,7 @@ function workAction(ch){
 }
 function useStation(ch){
   const w=workAction(ch); if(!w) return false;
+  ch.workT=0.35;
   if(w.kind==='pack'){const t=w.t;t.prog=Math.min(1,t.prog+0.16);sfx('tape',{x:t.x,y:1,z:t.z});if(t.prog>=1)doPack(t,ch);return true;}
   const l=w.t,k=l.item; setPackCode(k,packCode(k.order,l.dial,k.good)); k.labelBy=ch; k.lastBy=ch; k.lastT=gameTime;
   sfx('print',{x:l.x,y:1,z:l.z}); floater({x:l.x,y:1.2,z:l.z},'Étiquette '+ZONES[l.dial].name,l.dial===k.order?'small':'bad',l.dial===k.order?null:ch);
@@ -2382,6 +2562,22 @@ function fixDecals(){
   });
 }
 
+// ====== Roue d'emotes ======
+(function(){
+  const ring=$('ring');
+  EMOTES.forEach(([id,label],i)=>{const a=-Math.PI/2+i*TAU/EMOTES.length;const b=document.createElement('button');b.type='button';b.className='emo';b.textContent=label;
+    b.style.left=(50+Math.cos(a)*36)+'%';b.style.top=(50+Math.sin(a)*36)+'%';
+    b.addEventListener('click',()=>{$('wheel').hidden=true;sfx('ui');doAct('emote'+i);});ring.appendChild(b);});
+  const open=()=>{if((state!=='play'&&state!=='lobby')||anyOverlay()||!GOOF.ready)return;K.clear();$('wheel').hidden=false;sfx('ui');};
+  $('emoBtn').addEventListener('click',open);
+  $('wheelClose').addEventListener('click',()=>{$('wheel').hidden=true;});
+  $('wheel').addEventListener('click',e=>{if(e.target.id==='wheel')$('wheel').hidden=true;});
+  addEventListener('keydown',e=>{const tg=e.target&&e.target.tagName;if(tg==='INPUT')return;const k=e.key.toLowerCase();
+    if(k==='t'){if(!$('wheel').hidden)$('wheel').hidden=true;else open();}
+    else if(k==='escape'&&!$('wheel').hidden)$('wheel').hidden=true;
+    else if(!$('wheel').hidden&&/^[1-6]$/.test(k)){$('wheel').hidden=true;doAct('emote'+(+k-1));}});
+})();
+
 // ====== Multijoueur ======
 const TYPE_CODES=['std','big','fragile','poules','bomb','urgent','pallet','piano','aquarium','matelas','ballons','balles','ball','ext','vase','tele','poule1','bocal','ordi','pack'];
 const keyOf=ch=>ch.netId!=null?ch.netId:ch.key;
@@ -2414,8 +2610,7 @@ function makeHuman(j){
   else{
     ch=makeChar({name:j.nom,x:rnd(-3,3),z:rnd(0,3),vest:j.look.vest,hat:0xf5c518,label:j.nom});
     if(state!=='play') placeInRoom(ch,humans.size);
-    const tag=ch.v.tag; scene.remove(ch.v.root); ch.v=makeCharMesh(j.look.vest,0xf5c518,false,j.look);
-    if(tag){ch.v.root.add(tag);ch.v.tag=tag;}
+    ch.visSpec={vest:j.look.vest,hat:0xf5c518,boss:false,look:j.look}; rebuildVis(ch);
     ch.remote=true; ch.spawn={x:ch.body.position.x,z:ch.body.position.z}; ch.lookKey=JSON.stringify(j.look);
   }
   ch.netId=j.id; if(ch!==player) ch.name=j.nom; ch.ups=j.bonus||[]; ch.ctrl=ch.ctrl||{up:false,down:false};
@@ -2426,9 +2621,7 @@ function makeHuman(j){
 // Un pote a changé de tenue au vestiaire
 function updateHumanLook(ch,j){
   const key=JSON.stringify(j.look); ch.ups=j.bonus||[]; if(ch===player||ch.lookKey===key) return;
-  ch.lookKey=key; const tag=ch.v.tag,pos=ch.v.root.position.clone(),vis=ch.v.root.visible; scene.remove(ch.v.root);
-  ch.v=makeCharMesh(j.look.vest,0xf5c518,false,j.look); ch.v.root.position.copy(pos); ch.v.root.visible=vis; if(tag){ch.v.root.add(tag);ch.v.tag=tag;}
-  ch.foamG=null;
+  ch.lookKey=key; ch.visSpec={vest:j.look.vest,hat:0xf5c518,boss:false,look:j.look}; rebuildVis(ch);
 }
 function removeHuman(id){
   const ch=humans.get(id); if(!ch) return; humans.delete(id);
@@ -2519,7 +2712,7 @@ function buildSnap(){
   const fi=fires.map(f=>[f.id,r2(f.x),r2(f.z),Math.round(f.hp)]);
   const c=chars.map(ch=>{const b=ch.body,ko=ch.ko>0;
     return [keyOf(ch),r2(b.position.x),r2(b.position.y),r2(b.position.z),r2(ch.facing),r2(b.velocity.x),r2(b.velocity.y),r2(b.velocity.z),
-      (ko?1:0)|(ch.held?2:0)|(ch.inVeh?4:0)|(ch.punchT>0?8:0)|(ch.foam>0?16:0)|(ch.held&&ch.held.prop&&ch.held.prop.kind==='ext'?32:0),ko?[r2(b.quaternion.x),r2(b.quaternion.y),r2(b.quaternion.z),r2(b.quaternion.w)]:0,r2(ch.ko)];});
+      (ko?1:0)|(ch.held?2:0)|(ch.inVeh?4:0)|(ch.punchT>0?8:0)|(ch.foam>0?16:0)|(ch.held&&ch.held.prop&&ch.held.prop.kind==='ext'?32:0)|(ch.throwT>0?64:0)|(ch.hitT>0?128:0)|(ch.workT>0?256:0)|(ch.need&&ch.need.coffeeT>0?512:0)|(ch.held&&ch.held.mass>40?1024:0),ko?[r2(b.quaternion.x),r2(b.quaternion.y),r2(b.quaternion.z),r2(b.quaternion.w)]:0,r2(ch.ko),ch.emote?ch.emote.i+1:0];});
   NET.snapN=(NET.snapN||0)+1; const full=NET.snapN%20===1;
   const pi=props.map(pr=>pr.id), p=[];
   for(const pr of props){const b=pr.body,q=b.quaternion;
@@ -2646,6 +2839,7 @@ function clientUpdate(dt){
   for(const ch of chars){const c=ch.tgt;if(!c)continue;const b=ch.body,p=b.position;
     if(Math.hypot(c[1]-p.x,c[3]-p.z)>8){p.set(c[1],c[2],c[3]);if(ch===player){PRED.hist.length=0;PRED.pv.x=PRED.pv.z=0;}}
     const fl=c[8],wasVeh=ch.inVeh,wasKo=ch.ko>0;ch.ko=fl&1?1:0;ch.koLeft=c[10]||0;ch.foam=fl&16?1:0;ch.holdingExt=!!(fl&32);ch.held=fl&2?true:null;ch.inVeh=!!(fl&4);if(fl&8&&ch!==player)ch.punchT=0.15;
+    ch.throwT=fl&64?0.1:0;ch.hitT=fl&128?0.1:0;ch.workT=fl&256?0.1:0;ch.drinking=!!(fl&512);ch.heavy=!!(fl&1024);ch.emoteId=c[11]||0;
     // Toi : prédiction (sauf K.O., au volant ou projeté)
     if(ch===player&&(state==='play'||state==='lobby')&&!ch.ko&&!ch.inVeh&&Math.hypot(c[5],c[7])<7.5&&Math.hypot(c[1]-p.x,c[3]-p.z)<6){predictPlayer(c,dt,k);}
     else{p.x+=(c[1]-p.x)*k;p.y+=(c[2]-p.y)*k;p.z+=(c[3]-p.z)*k;ch.facing=lerpAngle(ch.facing,c[4],k);b.velocity.set(c[5],c[6],c[7]);
@@ -2674,7 +2868,7 @@ function renderCommon(dt,now){
   if(dust.visible) updDust(dt,now/1000);
   updCone(); updFx(dt); updCam(dt); updFloaters(dt); updHud(dt);
   renderer.render(scene,camera);
-  if(prev&&prev.ch&&!$('shop').hidden){prev.ch.root.rotation.y+=dt*0.9;prev.r.render(prev.sc,prev.cam);}
+  if(prev&&prev.ch&&!$('shop').hidden){prev.ch.root.rotation.y+=dt*0.9;if(prev.ch.mixer)prev.ch.mixer.update(dt);prev.r.render(prev.sc,prev.cam);}
 }
 
 // ====== Caméra et boucle ======
@@ -2716,6 +2910,8 @@ function frame(now){
     if(ch.ko>0){ch.ko-=dt;if(ch.ko<=0)wakeUp(ch);}
     if(ch.foam>0) ch.foam-=dt;
     if(ch.punchCd>0)ch.punchCd-=dt; if(ch.punchT>0)ch.punchT-=dt;
+    for(const k of ['throwT','hitT','workT']) if(ch[k]>0) ch[k]-=dt;
+    if(ch.emote){ch.emote.t-=dt;if(ch.emote.t<=0||ch.ko>0||ch.inVeh||ch.held||Math.hypot(ch.input.x,ch.input.z)>0.3)ch.emote=null;}
     if(!ch.inVeh&&ch.body.position.y<-5){ch.body.position.set(0,2,0);ch.body.velocity.set(0,0,0);}
     if(state==='play'&&!ch.inVeh&&ch.ko<=0){const q=ch.body.position;const out=Math.abs(q.x)>12.05||q.z>14.05||(q.z<-14.2&&(Math.abs(q.x)>2.2||q.z<-23.2));
       if(out){ch.body.position.set(clamp(q.x,-10,10),1.2,clamp(q.z,-12,12));ch.body.velocity.set(0,0,0);}}
@@ -2730,6 +2926,9 @@ function frame(now){
 // Attendre les polices pour les étiquettes des colis, sans bloquer plus d'une seconde et demie
 const fontsReady=document.fonts?Promise.race([Promise.all([document.fonts.load('40px Bungee'),document.fonts.load('700 30px "Barlow Condensed"')]),new Promise(r=>setTimeout(r,1500))]):Promise.resolve();
 applyOpt();
+loadGoof();
+// Accès de débogage (uniquement avec ?debug=1 dans l'adresse)
+try{if(/debug=1/.test(location.search))window.QB={get player(){return player},chars,camera,scene,GOOF,renderer,makeCharMesh,lookOf,save,applyLook,enterRoom,start,get state(){return state}};}catch(e){}
 fontsReady.catch(()=>{}).then(()=>{buildWorld();buildWorkshop();buildRoom();fixDecals();resetGame();placeInRoom(player,0);requestAnimationFrame(t=>{last=t;frame(t);});});
 })();
 </script>

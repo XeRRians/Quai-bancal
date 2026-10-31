@@ -9,7 +9,7 @@ const { WebSocketServer } = require('ws');
 
 const PORT = process.env.PORT || 3000;
 // Fichiers servis au navigateur (tout est à la racine du dépôt pour pouvoir l'envoyer depuis un téléphone)
-const PUBLICS = new Set(['/index.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png']);
+const PUBLICS = new Set(['/index.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png', '/goofball.glb']);
 const MAX_JOUEURS = 8;
 const TAILLE_MAX_MESSAGE = 64 * 1024;
 
@@ -21,7 +21,8 @@ const TYPES = {
   '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
-  '.ico': 'image/x-icon'
+  '.ico': 'image/x-icon',
+  '.glb': 'model/gltf-binary'
 };
 
 // ---------- Fichiers statiques ----------

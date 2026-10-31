@@ -7,6 +7,16 @@ Livre les colis sur le bon quai, embête tes collègues quand le patron a le dos
 - Gérard et Kévin, deux intérimaires pilotés par l'IA, peuvent compléter l'équipe.
 - Mode solo disponible sans connexion au serveur.
 
+## Le Goofball
+
+Les personnages utilisent `goofball.glb` (modèle Meshy + animations Mixamo). Le jeu choisit l'animation selon ce que fait le perso
+(repos, marche, course, porter, pousser, lancer, droite, coup reçu, étourdi, boire, conduire, saut) et ajoute un ballottement mou par-dessus.
+La couleur achetée en boutique teinte le corps ; chapeaux et accessoires s'accrochent aux os de la tête et du torse.
+
+**Roue d'emotes** : bouton ☺ ou touche **T** (puis 1 à 6 au clavier). On danse jusqu'à ce qu'on bouge… et danser sous les yeux du patron, c'est une bêtise.
+
+Si `goofball.glb` ne se charge pas, le jeu reprend les anciens bonshommes.
+
 ## L'atelier
 
 Les objets en vrac (vase, télé, poule, bocal, ordi) arrivent sans carton :
