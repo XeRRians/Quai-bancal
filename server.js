@@ -9,7 +9,7 @@ const { WebSocketServer } = require('ws');
 
 const PORT = process.env.PORT || 3000;
 // Fichiers servis au navigateur (tout est à la racine du dépôt pour pouvoir l'envoyer depuis un téléphone)
-const PUBLICS = new Set(['/index.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png', '/goofball.glb', '/ballon.glb', '/banc.glb', '/casier.glb', '/chariot.glb', '/panier.glb', '/tableau.glb']);
+const PUBLICS = new Set(['/index.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png', '/goofball.glb', '/ballon.glb', '/banc.glb', '/casier.glb', '/chariot.glb', '/panier.glb', '/tableau.glb', '/chapeau_bob.glb', '/chapeau_paille.glb', '/chapeau_steampunk.glb', '/chapeau_magicien.glb', '/chapeau_sorciere.glb', '/chapeau_rapiece.glb', '/musique_principale.mp3', '/musique_evenement.mp3', '/fin_de_service.mp3', '/sfx_droite.mp3', '/sfx_poule.mp3', '/poule.glb']);
 const MAX_JOUEURS = 8;
 const TAILLE_MAX_MESSAGE = 64 * 1024;
 
@@ -22,7 +22,8 @@ const TYPES = {
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.ico': 'image/x-icon',
-  '.glb': 'model/gltf-binary'
+  '.glb': 'model/gltf-binary',
+  '.mp3': 'audio/mpeg'
 };
 
 // ---------- Fichiers statiques ----------
@@ -40,10 +41,24 @@ const server = http.createServer((req, res) => {
   fs.readFile(complet, (err, data) => {
     if (err) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Introuvable'); return; }
     const ext = path.extname(complet).toLowerCase();
-    res.writeHead(200, {
+    const entetes = {
       'Content-Type': TYPES[ext] || 'application/octet-stream',
-      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=3600'
-    });
+      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=3600',
+      'Accept-Ranges': 'bytes'
+    };
+    // Lecture par morceaux (nécessaire pour la musique sur iPhone)
+    const plage = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+    if (plage && (plage[1] || plage[2])) {
+      let debut = plage[1] ? parseInt(plage[1], 10) : data.length - parseInt(plage[2], 10);
+      let fin = plage[1] && plage[2] ? parseInt(plage[2], 10) : data.length - 1;
+      debut = Math.max(0, debut); fin = Math.min(fin, data.length - 1);
+      if (debut > fin) { res.writeHead(416, { 'Content-Range': 'bytes */' + data.length }); res.end(); return; }
+      entetes['Content-Range'] = 'bytes ' + debut + '-' + fin + '/' + data.length;
+      res.writeHead(206, entetes);
+      res.end(data.subarray(debut, fin + 1));
+      return;
+    }
+    res.writeHead(200, entetes);
     res.end(data);
   });
 });

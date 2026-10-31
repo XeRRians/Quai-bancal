@@ -31,6 +31,14 @@ Si `goofball.glb` ne se charge pas, le jeu reprend les anciens bonshommes.
 - **Bouteille d'hélium** : une au vestiaire, une en salle de pause. Prends-la puis *Gonfler* devant un collègue (même assommé) : il gonfle et flotte 15 s. S'il n'y a personne devant toi, c'est toi qui respires. Attrape sa ficelle avec *Prendre* pour le promener comme un ballon. Gonfler un collègue devant le patron, c'est une bêtise (le patron, c'est encore pire).
 - **Décors 3D** : `ballon.glb`, `banc.glb`, `casier.glb`, `chariot.glb`, `panier.glb`, `tableau.glb` remplacent les formes simples (le chariot lève ses vraies fourches). S'ils ne se chargent pas, le jeu garde les formes simples ; la physique ne change pas.
 
+## Musiques, chapeaux, poule
+
+- **Musiques** : `musique_principale.mp3` (vestiaire et service), `musique_evenement.mp3` (pendant un événement), `fin_de_service.mp3` (écran de fin). Elles se lancent au premier clic ; sans elles, la petite boucle synthétique reprend.
+- **Bruitages** : `sfx_droite.mp3` (coups de poing) et `sfx_poule.mp3` (les « cot »).
+- **Chapeaux 3D** : `chapeau_bob`, `chapeau_paille`, `chapeau_magicien`, `chapeau_rapiece`, `chapeau_sorciere`, `chapeau_steampunk` (.glb), chargés seulement quand quelqu'un en porte ou en essaie un.
+- **Essayage** : dans les casiers, *Essayer* (ou toucher la carte) montre l'objet sur l'aperçu, même sans les sous. L'aperçu reste visible en faisant défiler.
+- **La poule** (`poule.glb`) : les poules en vrac marchent pour de vrai et regardent où elles vont.
+
 ## L'atelier
 
 Les objets en vrac (vase, télé, poule, bocal, ordi) arrivent sans carton :
