@@ -9,7 +9,7 @@ const { WebSocketServer } = require('ws');
 
 const PORT = process.env.PORT || 3000;
 // Fichiers servis au navigateur (tout est à la racine du dépôt pour pouvoir l'envoyer depuis un téléphone)
-const PUBLICS = new Set(['/index.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png', '/goofball.glb']);
+const PUBLICS = new Set(['/index.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png', '/goofball.glb', '/ballon.glb', '/banc.glb', '/casier.glb', '/chariot.glb', '/panier.glb', '/tableau.glb']);
 const MAX_JOUEURS = 8;
 const TAILLE_MAX_MESSAGE = 64 * 1024;
 
@@ -84,6 +84,7 @@ function nettoyerLook(l) {
   l = l && typeof l === 'object' ? l : {};
   return {
     vest: Number.isFinite(l.vest) ? l.vest & 0xffffff : 0xff7a1a,
+    eye: Number.isFinite(l.eye) ? l.eye & 0xffffff : 0xffffff,
     head: nettoyerTexte(l.head, 16) || 'casque',
     acc: l.acc ? nettoyerTexte(l.acc, 16) : null
   };

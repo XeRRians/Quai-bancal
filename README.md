@@ -21,8 +21,15 @@ Si `goofball.glb` ne se charge pas, le jeu reprend les anciens bonshommes.
 
 - **Trois vues** (bouton VUE, touche **V**, ou dans les options) : de haut, rapprochée, et de derrière façon GTA.
   En vue de derrière, le joystick suit la caméra ; glisse le doigt (ou la souris) ailleurs sur l'écran pour tourner autour.
-- **Jouets du vestiaire** : panier de basket (3 ballons, tir automatique en cloche si tu vises le panier, compteur sur le panneau),
+- **Jouets du vestiaire** : panier de basket (3 ballons, tir automatique en cloche si tu vises le panier, compteur au mur),
   sac de frappe qui se balance quand on le cogne, et trampoline.
+
+## Hélium, couleurs et décors
+
+- **Couleurs et yeux gratuits** : onglets *Couleur* (12 teintes) et *Yeux* (9 couleurs) dans les casiers, tout est offert.
+- **La langue pendouille** : deux os sont ajoutés à la langue au chargement du modèle, puis une petite simulation la fait ballotter (rien à changer dans `goofball.glb`).
+- **Bouteille d'hélium** : une au vestiaire, une en salle de pause. Prends-la puis *Gonfler* devant un collègue (même assommé) : il gonfle et flotte 15 s. S'il n'y a personne devant toi, c'est toi qui respires. Attrape sa ficelle avec *Prendre* pour le promener comme un ballon. Gonfler un collègue devant le patron, c'est une bêtise (le patron, c'est encore pire).
+- **Décors 3D** : `ballon.glb`, `banc.glb`, `casier.glb`, `chariot.glb`, `panier.glb`, `tableau.glb` remplacent les formes simples (le chariot lève ses vraies fourches). S'ils ne se chargent pas, le jeu garde les formes simples ; la physique ne change pas.
 
 ## L'atelier
 
