@@ -17,6 +17,13 @@ La couleur achetée en boutique teinte le corps ; chapeaux et accessoires s'accr
 
 Si `goofball.glb` ne se charge pas, le jeu reprend les anciens bonshommes.
 
+## Vues et vestiaire
+
+- **Trois vues** (bouton VUE, touche **V**, ou dans les options) : de haut, rapprochée, et de derrière façon GTA.
+  En vue de derrière, le joystick suit la caméra ; glisse le doigt (ou la souris) ailleurs sur l'écran pour tourner autour.
+- **Jouets du vestiaire** : panier de basket (3 ballons, tir automatique en cloche si tu vises le panier, compteur sur le panneau),
+  sac de frappe qui se balance quand on le cogne, et trampoline.
+
 ## L'atelier
 
 Les objets en vrac (vase, télé, poule, bocal, ordi) arrivent sans carton :

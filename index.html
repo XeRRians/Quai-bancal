@@ -149,6 +149,8 @@ body.inlobby .plate.needs{display:none}
 .lobbyhud .val{font-size:18px}
 .emobtn{position:fixed;right:max(16px,calc(env(safe-area-inset-right,0px) + 12px));top:calc(env(safe-area-inset-top,0px) + 196px);z-index:6;appearance:none;width:54px;height:54px;border-radius:50%;border:2px solid var(--safety);background:rgba(38,39,34,.92);color:var(--safety);font:22px/1 var(--f-display);cursor:pointer}
 body.inlobby .emobtn{top:calc(env(safe-area-inset-top,0px) + 70px)}
+.cambtn{top:calc(env(safe-area-inset-top,0px) + 258px);font:14px/1 var(--f-display)}
+body.inlobby .cambtn{top:calc(env(safe-area-inset-top,0px) + 132px)}
 #wheel{position:fixed;inset:0;z-index:21;display:flex;align-items:center;justify-content:center;background:rgba(16,16,14,.55)}
 #wheel .ring{position:relative;width:min(84vw,330px);height:min(84vw,330px);border-radius:50%;background:rgba(38,39,34,.92);border:2px solid var(--plate-edge)}
 #wheel .emo{position:absolute;width:86px;height:86px;margin:-43px 0 0 -43px;border-radius:50%;appearance:none;border:2px solid var(--plate-edge);background:var(--asphalt);color:var(--ink);font:700 15px/1.05 var(--f-body);text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
@@ -243,6 +245,7 @@ body.inlobby .emobtn{top:calc(env(safe-area-inset-top,0px) + 70px)}
 </div>
 <div class="lobbyhud" id="lobbyHud"><div class="plate"><span class="lbl" id="lhDiff">Vestiaire · Nuit normale</span><span class="val" id="lhReady">Prêts 0/1</span></div></div>
 <button class="emobtn" id="emoBtn" type="button" aria-label="Emotes" hidden>☺</button>
+<button class="emobtn cambtn" id="camBtn" type="button" aria-label="Changer de vue">VUE</button>
 <div id="wheel" hidden><div class="ring" id="ring"><button class="mid" id="wheelClose" type="button">Fermer</button></div></div>
 <div id="koUI" hidden><div class="kotitle">K.O. !</div><button id="koBtn" type="button">SECOUE-<br>TOI !</button><div class="kobar"><i id="koBar"></i></div></div>
 <div id="foamUI" hidden><div id="foamBlobs"></div><div class="foamtip">Essuie la mousse !</div></div>
@@ -289,6 +292,7 @@ body.inlobby .emobtn{top:calc(env(safe-area-inset-top,0px) + 70px)}
         <kbd>R / F</kbd><span>Monter / baisser la fourche</span>
         <kbd>E</kbd><span>Au vestiaire : utiliser un tableau ou les casiers</span>
         <kbd>T</kbd><span>Roue d'emotes (danses)</span>
+        <kbd>V</kbd><span>Changer de vue (haut, proche, derrière)</span>
       </div>
       <div class="btnrow"><button class="go" id="startBtn" type="button">Entrer dans le vestiaire</button><button class="go ghost" id="optBtn" type="button">Options</button><button id="shopBtn" type="button" hidden></button></div>
       <p class="note">Dans le vestiaire : invite tes potes au tableau des collègues, choisis la nuit, passe aux casiers, puis tout le monde devant la grande porte. Jusqu'à 8 joueurs.</p>
@@ -397,6 +401,8 @@ body.inlobby .emobtn{top:calc(env(safe-area-inset-top,0px) + 70px)}
           <span class="os">Sur iPhone, le navigateur ne permet pas de vibrer : garde le tremblement d'écran.</span></div>
         <div class="opt"><span class="ol">Tremblement d'écran</span><div class="seg" data-opt="shake"><button type="button" data-v="1">Oui</button><button type="button" data-v="0">Non</button></div></div>
         <div class="opt"><span class="ol">Graphismes</span><div class="seg" data-opt="quality"><button type="button" data-v="basse">Fluide</button><button type="button" data-v="haute">Joli</button></div></div>
+        <div class="opt"><span class="ol">Caméra</span><div class="seg" data-opt="cam"><button type="button" data-v="haut">Haut</button><button type="button" data-v="proche">Proche</button><button type="button" data-v="derriere">Derrière</button></div>
+          <span class="os">En vue de derrière, le joystick suit la caméra ; glisse ailleurs sur l'écran pour tourner autour.</span></div>
         <div class="opt"><span class="ol">Taille du joystick</span><div class="seg" data-opt="joy"><button type="button" data-v="petit">S</button><button type="button" data-v="normal">M</button><button type="button" data-v="grand">L</button></div></div>
         <div class="opt"><span class="ol">Mode gaucher</span><div class="seg" data-opt="lefty"><button type="button" data-v="1">Oui</button><button type="button" data-v="0">Non</button></div>
           <span class="os">Joystick à droite, boutons à gauche.</span></div>
@@ -446,7 +452,7 @@ if(isTouch){document.body.classList.add('touch');$('touch').hidden=false;}
 
 // ====== Options (gardées dans le navigateur) ======
 const OPT_KEY='quaiBancal.options';
-let opt={master:80,music:45,sfx:90,vibe:true,shake:true,quality:'haute',joy:'normal',lefty:false};
+let opt={master:80,music:45,sfx:90,vibe:true,shake:true,quality:'haute',joy:'normal',lefty:false,cam:'haut'};
 try{const raw=localStorage.getItem(OPT_KEY);if(raw){const d=JSON.parse(raw);if(d&&typeof d==='object')opt=Object.assign(opt,d);}}catch(e){}
 function saveOpt(){try{localStorage.setItem(OPT_KEY,JSON.stringify(opt));}catch(e){}}
 const JOY_SIZES={petit:140,normal:170,grand:210};
@@ -626,6 +632,8 @@ const TYPES={
   ballons:{size:[0.6,0.5,0.6],mass:3,value:70},
   balles:{size:[0.55,0.55,0.55],mass:7,value:40},
   ball:{size:[0.34,0.34,0.34],mass:0.5,value:0},
+  bball:{size:[0.26,0.26,0.26],mass:0.6,value:0},
+  bag:{size:[0.56,0.9,0.56],mass:12,value:0},
   ext:{size:[0.26,0.62,0.26],mass:5,value:0},
   vase:{size:[0.34,0.56,0.34],mass:3,value:70},
   tele:{size:[0.78,0.52,0.3],mass:9,value:100},
@@ -1190,6 +1198,7 @@ function spawnSpecial(type,x,y,z,id){
 }
 function spawnBox(type,dest,x,y,z,id){
   if(type==='ball'||type==='ext') return spawnSpecial(type,x,y,z,id);
+  if(type==='bball'||type==='bag') return spawnToy(type,x,y,z,id);
   if(RAW[type]) return spawnRaw(type,dest,x,y,z,id);
   const T=TYPES[type],[sx,sy,sz]=T.size;
   const b=newPropBody(T.mass); b.addShape(new CANNON.Box(new CANNON.Vec3(sx/2,sy/2,sz/2)));
@@ -1231,6 +1240,7 @@ function spawnPallet(x,z,id){
 }
 function killProp(pr){
   pr.dead=true;
+  if(pr.kind==='bag'&&typeof bagCons!=='undefined'&&bagCons){W.removeConstraint(bagCons);bagCons=null;}
   for(const ch of chars) if(ch.held===pr.body) release(ch);
   removeBody(pr.body); scene.remove(pr.mesh); propById.delete(pr.id);
   const i=props.indexOf(pr); if(i>=0) props.splice(i,1);
@@ -1308,6 +1318,7 @@ function throwHeld(ch){
   if(h.char){koQ.push([h.char,f.x*9*m,6*m,f.z*9*m,'lancer']);
     if(h.char===boss) betise(ch,'lancer le patron',4,true); else betise(ch,'lancer un collègue',2); return;}
   if(h.prop){h.prop.thrownBy=ch;h.prop.thrownT=gameTime;}
+  if(h.prop&&h.prop.kind==='bball'&&state==='lobby'&&shootBall(ch,h)){sfx('throw',ch.body.position);ch.throwT=0.45;ch.emote=null;return;}
   sfx('throw',ch.body.position); ch.throwT=0.45; ch.emote=null;
   h.applyImpulse(new CANNON.Vec3(f.x*9*m*s,5*m*s,f.z*9*m*s),h.position);
   h.angularVelocity.set(rnd(-4,4),rnd(-4,4),rnd(-4,4));
@@ -1380,7 +1391,7 @@ function punch(ch){
     return true;
   }
   for(const pr of props){const q=pr.body.position,dx=q.x-p.x,dz=q.z-p.z,d=Math.hypot(dx,dz);
-    if(d<1.3&&(dx*f.x+dz*f.z)/(d||1)>0.35){const m=pr.body.mass;pr.body.applyImpulse(new CANNON.Vec3(f.x*m*5,m*2,f.z*m*5),q);pr.lastBy=ch;pr.lastT=gameTime;floater(q,'BOUF','small');sfx('thud',q,6);break;}}
+    if(d<1.3&&(dx*f.x+dz*f.z)/(d||1)>0.35){const m=pr.body.mass;pr.body.applyImpulse(new CANNON.Vec3(f.x*m*5,m*2,f.z*m*5),q);pr.lastBy=ch;pr.lastT=gameTime;if(pr.kind==='bag'){pr.body.applyImpulse(new CANNON.Vec3(f.x*m*4,0,f.z*m*4),q);floater(q,['BAM !','POW !','PAF !'][Math.random()*3|0],'bad');sfx('punch',q);}else{floater(q,'BOUF','small');sfx('thud',q,6);}break;}}
   sfx('whoosh',p);
   return false;
 }
@@ -1876,6 +1887,7 @@ function updHud(dt){
   if(doorMesh) doorMesh.position.y=1.5+clamp(doorT/3,0,1)*2.95;
   hudT-=dt; if(hudT>0) return; hudT=0.1;
   $('emoBtn').hidden=!GOOF.ready||(state!=='play'&&state!=='lobby')||anyOverlay();
+  $('camBtn').hidden=(state!=='play'&&state!=='lobby')||anyOverlay();
   document.body.classList.toggle('inlobby',state==='lobby'||state==='menu'||(state==='pause'&&NET.prevState==='lobby'));
   if(state==='lobby'||state==='menu'){
     $('lhDiff').textContent='Vestiaire · '+DIFFS[DIFF].name+(NET.code?' · '+NET.code:'');
@@ -1937,7 +1949,18 @@ addEventListener('keydown',e=>{
 });
 addEventListener('keyup',e=>K.delete(e.key.toLowerCase()));
 addEventListener('blur',()=>K.clear());
-renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button===0&&state==='play') doAct('throw');});
+(function(){
+  const el=renderer.domElement; let drag=null;
+  el.addEventListener('pointerdown',e=>{if(e.button!==0&&e.pointerType==='mouse')return;drag={id:e.pointerId,x:e.clientX,moved:false,mouse:e.pointerType==='mouse'};try{el.setPointerCapture(e.pointerId);}catch(_){}});
+  el.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x;
+    if(Math.abs(dx)>4)drag.moved=true;
+    if(drag.moved&&opt.cam==='derriere'){camYaw-=dx*0.009;camDragT=1.6;drag.x=e.clientX;}});
+  const up=e=>{if(!drag||e.pointerId!==drag.id)return;if(drag.mouse&&!drag.moved&&(state==='play'||state==='lobby'))doAct('throw');drag=null;};
+  el.addEventListener('pointerup',up);el.addEventListener('pointercancel',()=>{drag=null;});
+})();
+function cycleCam(){const order=['haut','proche','derriere'];opt.cam=order[(order.indexOf(opt.cam||'haut')+1)%3];
+  if(opt.cam==='derriere')camYaw=player.inVeh?FL.yaw:player.facing;
+  saveOpt();toast(CAM_NAMES[opt.cam],null,true);sfx('ui');if(!$('options').hidden)renderOpt();}
 const joy={x:0,y:0,id:null};
 (function(){
   // Joystick flottant : il apparaît là où le pouce touche la moitié gauche de l'écran
@@ -1963,6 +1986,7 @@ function readInput(){
   let my=(has(moveKeys.up)?1:0)-(has(moveKeys.down)?1:0)+joy.y;
   const l=Math.hypot(mx,my); if(l>1){mx/=l;my/=l;}
   if((state!=='play'&&state!=='lobby')||anyOverlay()||player.ko>0){mx=my=0;}
+  if(opt.cam==='derriere'&&!player.inVeh&&(mx||my)){const sn=Math.sin(camYaw),cs=Math.cos(camYaw);const wx=my*sn-mx*cs,wz=my*cs+mx*sn;mx=wx;my=-wz;}
   player.raw.mx=mx; player.raw.my=my;
   player.ctrl.up=state==='play'&&(K.has('r')||touchHold.up); player.ctrl.down=state==='play'&&(K.has('f')||touchHold.down);
 }
@@ -2358,7 +2382,7 @@ function toRoom(){
   if(ev) endEvent(); clearFires();
   const list=NET.mode==='solo'?[player]:[...humans.values()];
   list.forEach((h,i)=>placeInRoom(h,i));
-  state='lobby'; doorT=0; NET.endT=0;
+  state='lobby'; doorT=0; NET.endT=0; ensureToys();
   ['menu','endScreen','pause','options'].forEach(id=>$(id).hidden=true);
   $('pauseBtn').hidden=false;
 }
@@ -2562,6 +2586,114 @@ function fixDecals(){
   });
 }
 
+// ====== Jouets du vestiaire ======
+const HOOP={x:ROOM.x-6.2,y:2.3,z:ROOM.z+1.6,r:0.3};
+const BAG={x:ROOM.x+3.7,z:ROOM.z+0.6,top:2.05};
+const TRAMP={x:ROOM.x-4.1,z:ROOM.z-3.4,r:0.85};
+let hoopScore=0,hoopLast='',hoopShown=-1,hoopCtx=null,hoopTex=null,bagRope=null;
+const BBALL_TEX=canvasTex(128,64,(g,w,h)=>{g.fillStyle='#e8752a';g.fillRect(0,0,w,h);g.strokeStyle='#2b1a10';g.lineWidth=3;
+  g.beginPath();g.moveTo(0,h/2);g.lineTo(w,h/2);g.stroke();for(const x of [w/4,w*3/4]){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke();}
+  g.beginPath();g.ellipse(w/2,h/2,18,h/2,0,0,TAU);g.stroke();});
+function spawnToy(type,x,y,z,id){
+  const T=TYPES[type]; const b=newPropBody(T.mass); let m;
+  if(type==='bball'){b.material=mBouncy;b.addShape(new CANNON.Sphere(0.13));b.linearDamping=0.01;b.angularDamping=0.2;
+    m=mesh(new THREE.SphereGeometry(0.13,16,12),new THREE.MeshLambertMaterial({map:BBALL_TEX}));}
+  else{b.addShape(new CANNON.Cylinder(0.28,0.28,0.9,10));b.linearDamping=0.25;b.angularDamping=0.6;
+    // (les cylindres cannon sont couchés : on les redresse)
+    const q=new CANNON.Quaternion();q.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);b.shapeOrientations[0]=q;b.updateBoundingRadius();
+    m=new THREE.Group();scene.add(m);
+    mesh(new THREE.CylinderGeometry(0.28,0.28,0.9,16),M(0xb3261e),0,0,0,m);
+    mesh(new THREE.CylinderGeometry(0.29,0.29,0.08,16),M(0x1b1c19),0,0.3,0,m);mesh(new THREE.CylinderGeometry(0.29,0.29,0.08,16),M(0x1b1c19),0,-0.3,0,m);}
+  b.position.set(x,y,z); W.addBody(b);
+  const pr={body:b,mesh:m,kind:type,type,dest:0,value:0,dead:false,id:id||++propSeq,prevY:y};
+  propById.set(pr.id,pr); b.prop=pr; props.push(pr); return pr;
+}
+// Les jouets reviennent à leur place (après un service, ou s'ils sortent du vestiaire)
+let bagAnchor=null,bagCons=null;
+function ensureToys(){
+  if(isClient()) return;
+  const balls=props.filter(p=>p.kind==='bball');
+  for(const p of balls){const q=p.body.position;if(q.y<-3||Math.abs(q.x-ROOM.x)>7.5||Math.abs(q.z-ROOM.z)>5.6)killProp(p);}
+  for(let i=props.filter(p=>p.kind==='bball').length;i<3;i++) spawnToy('bball',ROOM.x-4.7+i*0.45,0.4,ROOM.z+2.6);
+  if(!props.some(p=>p.kind==='bag')){
+    const bag=spawnToy('bag',BAG.x,BAG.top-0.55-0.45,BAG.z);
+    if(!bagAnchor){bagAnchor=new CANNON.Body({mass:0});bagAnchor.position.set(BAG.x,BAG.top,BAG.z);W.addBody(bagAnchor);}
+    if(bagCons)W.removeConstraint(bagCons);
+    bagCons=new CANNON.PointToPointConstraint(bag.body,new CANNON.Vec3(0,1.0,0),bagAnchor,new CANNON.Vec3(0,0,0),400);W.addConstraint(bagCons);
+  }
+}
+function buildToys(){
+  const X=ROOM.x,Z=ROOM.z;
+  // Panier de basket fixé au mur de gauche
+  addStatic(0.04,0.5,0.62,HOOP.x-0.42,Z+1.6,null).position.y=HOOP.y+0.35;
+  const c=document.createElement('canvas');c.width=256;c.height=192;hoopCtx=c.getContext('2d');hoopTex=new THREE.CanvasTexture(c);
+  const board=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.95,1.25),[M(0xf3efe2),new THREE.MeshLambertMaterial({map:hoopTex}),M(0xf3efe2),M(0xf3efe2),M(0xf3efe2),M(0xf3efe2)]);
+  board.position.set(HOOP.x-0.42,HOOP.y+0.38,HOOP.z);scene.add(board);
+  mesh(new THREE.BoxGeometry(0.08,HOOP.y+0.4,0.08),M(0x5a5c55),HOOP.x-0.55,(HOOP.y+0.4)/2,HOOP.z);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(HOOP.r,0.022,8,24),M(0xe8752a));rim.rotation.x=Math.PI/2;rim.position.set(HOOP.x,HOOP.y,HOOP.z);scene.add(rim);
+  const net=new THREE.Mesh(new THREE.CylinderGeometry(HOOP.r,HOOP.r*0.6,0.38,12,3,true),new THREE.MeshBasicMaterial({color:0xf3efe2,wireframe:true}));net.position.set(HOOP.x,HOOP.y-0.2,HOOP.z);scene.add(net);
+  mesh(new THREE.BoxGeometry(0.34,0.04,0.06),M(0x5a5c55),HOOP.x-0.25,HOOP.y,HOOP.z);
+  const ring=new CANNON.Body({mass:0,material:mDef,collisionFilterGroup:G.ST,collisionFilterMask:-1});
+  for(let i=0;i<10;i++){const a=i/10*TAU;ring.addShape(new CANNON.Sphere(0.03),new CANNON.Vec3(Math.cos(a)*HOOP.r,0,Math.sin(a)*HOOP.r));}
+  ring.position.set(HOOP.x,HOOP.y,HOOP.z);W.addBody(ring);
+  drawHoop();
+  // Sac de frappe sous sa potence
+  for(const dx of [-0.7,0.7]){addStatic(0.05,1.1,0.05,BAG.x+dx,BAG.z,0x2b2c28,1.1);}
+  mesh(new THREE.BoxGeometry(1.5,0.08,0.08),M(0x2b2c28),BAG.x,BAG.top+0.05,BAG.z);
+  bagRope=mesh(new THREE.CylinderGeometry(0.015,0.015,1,6),M(0x1b1c19),BAG.x,BAG.top-0.25,BAG.z);
+  // Trampoline
+  const tr=new THREE.Group();tr.position.set(TRAMP.x,0,TRAMP.z);scene.add(tr);
+  const mat=new THREE.Mesh(new THREE.CylinderGeometry(TRAMP.r,TRAMP.r,0.04,24),M(0x1b1c19));mat.position.y=0.3;tr.add(mat);mat.receiveShadow=true;
+  const fr=new THREE.Mesh(new THREE.TorusGeometry(TRAMP.r,0.06,8,28),M(0x2f6db5));fr.rotation.x=Math.PI/2;fr.position.y=0.31;tr.add(fr);
+  for(let i=0;i<4;i++){const a=i/4*TAU+0.4;mesh(new THREE.BoxGeometry(0.05,0.3,0.05),M(0x5a5c55),Math.cos(a)*TRAMP.r,0.15,Math.sin(a)*TRAMP.r,tr);}
+  const tb=new CANNON.Body({mass:0,material:mBouncy,collisionFilterGroup:G.ST,collisionFilterMask:-1});tb.addShape(new CANNON.Cylinder(TRAMP.r,TRAMP.r,0.3,12));
+  {const q=new CANNON.Quaternion();q.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);tb.shapeOrientations[0]=q;tb.updateBoundingRadius();}
+  tb.position.set(TRAMP.x,0.15,TRAMP.z);W.addBody(tb);
+}
+function drawHoop(){
+  if(!hoopCtx||hoopShown===hoopScore) return; hoopShown=hoopScore;
+  const g=hoopCtx;g.fillStyle='#f3efe2';g.fillRect(0,0,256,192);g.strokeStyle='#d23b2e';g.lineWidth=10;g.strokeRect(70,90,116,80);
+  g.fillStyle='#1b1c19';g.textAlign='center';g.font='26px '+FONT_D;g.fillText('PANIERS',128,40);g.font='44px '+FONT_D;g.fillStyle='#d23b2e';g.fillText(String(hoopScore),128,84);
+  if(hoopLast){g.font='700 20px '+FONT_B;g.fillStyle='#1b1c19';g.fillText(hoopLast.slice(0,14),128,140);}
+  hoopTex.needsUpdate=true;
+}
+// Tir au panier : si on vise à peu près le panier, le ballon part en cloche (avec un peu d'imprécision)
+function shootBall(ch,b){
+  const p=b.position,dx=HOOP.x-p.x,dz=HOOP.z-p.z,d=Math.hypot(dx,dz);
+  const face=fwd(ch.facing);if(d>7.5||(dx*face.x+dz*face.z)/(d||1)<0.55) return false;
+  const t=clamp(0.45+d*0.08,0.5,1.05),err=0.04+d*0.035;
+  const ty=HOOP.y+0.12-p.y;
+  b.velocity.set(dx/t+rnd(-err,err),ty/t+0.5*20*t+rnd(-err,err)*0.6,dz/t+rnd(-err,err));
+  b.angularVelocity.set(rnd(-6,6),0,rnd(-6,6));
+  return true;
+}
+function toysLogic(dt){
+  ensureToysT-=dt; if(ensureToysT<=0){ensureToysT=2;ensureToys();}
+  for(const pr of props){
+    if(pr.kind!=='bball') continue;
+    const q=pr.body.position,v=pr.body.velocity;
+    const nowS=performance.now()/1000;
+    if(pr.prevY>HOOP.y&&q.y<=HOOP.y&&v.y<0&&Math.hypot(q.x-HOOP.x,q.z-HOOP.z)<HOOP.r-0.04&&nowS-(pr.scoreT||-9)>1){
+      pr.scoreT=nowS;hoopScore++;const by=pr.lastBy;hoopLast=by?by.name:'';
+      floater({x:HOOP.x,y:HOOP.y,z:HOOP.z},'PANIER !'+(by?' '+by.name:''),'good');sfx('cash',{x:HOOP.x,y:1,z:HOOP.z});
+      if(by)rumbleFor(by,40,0.2);
+    }
+    pr.prevY=q.y;
+  }
+  // Trampoline : rebond garanti
+  for(const ch of chars){if(ch.inVeh||ch.ko>0)continue;const q=ch.body.position;
+    if(Math.hypot(q.x-TRAMP.x,q.z-TRAMP.z)<TRAMP.r-0.1&&q.y<1.15&&ch.body.velocity.y<=0.5){ch.body.velocity.y=8.5;sfx('boing',q);}}
+}
+let ensureToysT=0;
+function updToysVis(){
+  drawHoop();
+  const bag=props.find(p=>p.kind==='bag');
+  if(bag&&bagRope){const top=bag.body.pointToWorldFrame(new CANNON.Vec3(0,0.45,0));const ax=BAG.x,ay=BAG.top,az=BAG.z;
+    const dx=top.x-ax,dy=top.y-ay,dz=top.z-az,l=Math.hypot(dx,dy,dz)||0.01;
+    bagRope.position.set((ax+top.x)/2,(ay+top.y)/2,(az+top.z)/2);bagRope.scale.set(1,l,1);
+    bagRope.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(dx/l,dy/l,dz/l));}
+}
+
 // ====== Roue d'emotes ======
 (function(){
   const ring=$('ring');
@@ -2570,16 +2702,18 @@ function fixDecals(){
     b.addEventListener('click',()=>{$('wheel').hidden=true;sfx('ui');doAct('emote'+i);});ring.appendChild(b);});
   const open=()=>{if((state!=='play'&&state!=='lobby')||anyOverlay()||!GOOF.ready)return;K.clear();$('wheel').hidden=false;sfx('ui');};
   $('emoBtn').addEventListener('click',open);
+  $('camBtn').addEventListener('click',cycleCam);
   $('wheelClose').addEventListener('click',()=>{$('wheel').hidden=true;});
   $('wheel').addEventListener('click',e=>{if(e.target.id==='wheel')$('wheel').hidden=true;});
   addEventListener('keydown',e=>{const tg=e.target&&e.target.tagName;if(tg==='INPUT')return;const k=e.key.toLowerCase();
     if(k==='t'){if(!$('wheel').hidden)$('wheel').hidden=true;else open();}
+    else if(k==='v'&&(state==='play'||state==='lobby')&&!anyOverlay())cycleCam();
     else if(k==='escape'&&!$('wheel').hidden)$('wheel').hidden=true;
     else if(!$('wheel').hidden&&/^[1-6]$/.test(k)){$('wheel').hidden=true;doAct('emote'+(+k-1));}});
 })();
 
 // ====== Multijoueur ======
-const TYPE_CODES=['std','big','fragile','poules','bomb','urgent','pallet','piano','aquarium','matelas','ballons','balles','ball','ext','vase','tele','poule1','bocal','ordi','pack'];
+const TYPE_CODES=['std','big','fragile','poules','bomb','urgent','pallet','piano','aquarium','matelas','ballons','balles','ball','ext','vase','tele','poule1','bocal','ordi','pack','bball','bag'];
 const keyOf=ch=>ch.netId!=null?ch.netId:ch.key;
 function charByKey(k){if(typeof k==='number')return humans.get(k)||null;return k==='g'?bots[0]:k==='k'?bots[1]:k==='p'?boss:null;}
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2708,7 +2842,7 @@ function onCmd(id,d){
   if(Array.isArray(d.a)) for(const a of d.a.slice(0,6)){if(!ACTS[a])continue;if(a==='wake'||a==='wipe'||state==='play'||state==='lobby')ACTS[a](h);}
 }
 function buildSnap(){
-  const g=[r2(timeLeft),r2(truckT),days,ev?ev.id:'',ev?r2(ev.t):0,state,(wcLamp&&wcLamp.material.color.getHex()===0xff5a4a)?1:0,boss.ai.inOffice?1:0,boss.ai.mode==='chase'?1:0,lobbyReady[0],lobbyReady[1],r2(doorT),DIFF];
+  const g=[r2(timeLeft),r2(truckT),days,ev?ev.id:'',ev?r2(ev.t):0,state,(wcLamp&&wcLamp.material.color.getHex()===0xff5a4a)?1:0,boss.ai.inOffice?1:0,boss.ai.mode==='chase'?1:0,lobbyReady[0],lobbyReady[1],r2(doorT),DIFF,hoopScore,hoopLast];
   const fi=fires.map(f=>[f.id,r2(f.x),r2(f.z),Math.round(f.hp)]);
   const c=chars.map(ch=>{const b=ch.body,ko=ch.ko>0;
     return [keyOf(ch),r2(b.position.x),r2(b.position.y),r2(b.position.z),r2(ch.facing),r2(b.velocity.x),r2(b.velocity.y),r2(b.velocity.z),
@@ -2757,6 +2891,7 @@ function applySnap(d){
   if(g[5]==='play'&&state!=='play') clientStart();
   if(g[5]==='lobby'&&state!=='lobby'){['endScreen','pause','options'].forEach(id=>$(id).hidden=true);state='lobby';}
   if(g[9]!=null){lobbyReady=[g[9],g[10]];doorT=g[11];if(g[12]&&DIFFS[g[12]])DIFF=g[12];}
+  if(g[13]!=null){hoopScore=g[13];hoopLast=g[14]||'';}
   // Feux
   if(d.fi){const keep=new Set(d.fi.map(q=>q[0]));for(const f of fires.slice()) if(!keep.has(f.id)) removeFire(f);
     for(const q of d.fi){let f=fires.find(x=>x.id===q[0]);if(!f)f=addFire(q[1],q[2],q[0]);f.hp=q[3];}}
@@ -2857,7 +2992,7 @@ function clientUpdate(dt){
   for(const ch of chars){if(ch.punchT>0)ch.punchT-=dt;}
 }
 function renderCommon(dt,now){
-  updStationsVis();
+  updStationsVis(); updToysVis();
   for(const pr of props){pr.mesh.position.copy(pr.body.position);pr.mesh.quaternion.copy(pr.body.quaternion);}
   fmesh.position.copy(chassis.position); fmesh.quaternion.copy(chassis.quaternion);
   carriage.position.copy(forks.position); carriage.quaternion.copy(forks.quaternion);
@@ -2876,16 +3011,41 @@ function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=i
 addEventListener('resize',resize); resize();
 const camLook=new THREE.Vector3(0,0,0);
 camera.position.set(0,14,14);
+// Trois vues : de haut, de haut rapprochée, de derrière (façon GTA)
+let camYaw=Math.PI, camDragT=0, camNear=0.8;
+const CAM_NAMES={haut:'Vue de haut',proche:'Vue rapprochée',derriere:'Vue de derrière'};
+function clampCam(x,z,tx){
+  if(tx>40) return [clamp(x,ROOM.x-6.8,ROOM.x+6.8),clamp(z,ROOM.z-4.9,ROOM.z+4.9)];
+  if(z<-13.9&&Math.abs(x)<2.1) return [x,Math.max(z,-23)];       // dans la remorque
+  return [clamp(x,-11.8,11.8),clamp(z,-13.8,13.8)];
+}
 function updCam(dt){
   const t=player.inVeh?chassis.position:player.body.position;
-  const portrait=camera.aspect<1;
-  const oy=portrait?17:13, oz=portrait?13:11;
-  const k=1-Math.exp(-5*dt);
-  camLook.x+=(t.x-camLook.x)*k; camLook.z+=(t.z-camLook.z)*k;
-  camera.position.x+=(camLook.x-camera.position.x)*k;
-  camera.position.y+=(oy-camera.position.y)*k;
-  camera.position.z+=(camLook.z+oz-camera.position.z)*k;
-  camera.lookAt(camLook.x,0.4,camLook.z-(portrait?1.2:0));
+  const mode=opt.cam||'haut';
+  const wantNear=mode==='derriere'?0.15:0.8, wantFov=mode==='derriere'?(camera.aspect<1?58:50):45;
+  if(camNear!==wantNear||camera.fov!==wantFov){camNear=wantNear;camera.near=wantNear;camera.fov=wantFov;camera.updateProjectionMatrix();}
+  if(mode==='derriere'){
+    const face=player.inVeh?FL.yaw:player.facing;
+    const moving=player.inVeh?Math.abs(FL.speed)>0.6:Math.hypot(player.body.velocity.x,player.body.velocity.z)>1.2;
+    camDragT-=dt;
+    if(camDragT<=0&&moving&&!player.ko) camYaw=lerpAngle(camYaw,face,1-Math.exp(-(player.inVeh?3:1.4)*dt));
+    const pt=camera.aspect<1,f=fwd(camYaw),dist=player.inVeh?4.6:(pt?3.9:3.4),h=player.inVeh?2.2:(pt?1.45:1.25);
+    const [cx,cz]=clampCam(t.x-f.x*dist,t.z-f.z*dist,t.x);
+    const kk=1-Math.exp(-9*dt);
+    camera.position.x+=(cx-camera.position.x)*kk; camera.position.z+=(cz-camera.position.z)*kk;
+    camera.position.y+=((player.ko?0.7:t.y)+h-camera.position.y)*kk;
+    camLook.x+=(t.x+f.x*1.4-camLook.x)*kk; camLook.z+=(t.z+f.z*1.4-camLook.z)*kk;
+    camera.lookAt(camLook.x,(player.ko?0.7:t.y)+0.35,camLook.z);
+  } else {
+    const portrait=camera.aspect<1, near=mode==='proche'?0.55:1;
+    const oy=(portrait?17:13)*near, oz=(portrait?13:11)*near;
+    const k=1-Math.exp(-5*dt);
+    camLook.x+=(t.x-camLook.x)*k; camLook.z+=(t.z-camLook.z)*k;
+    camera.position.x+=(camLook.x-camera.position.x)*k;
+    camera.position.y+=(oy-camera.position.y)*k;
+    camera.position.z+=(camLook.z+oz-camera.position.z)*k;
+    camera.lookAt(camLook.x,0.4,camLook.z-(portrait?1.2:0)*near);
+  }
   if(shakeAmt>0.01){const a=shakeAmt*0.35;camera.position.x+=rnd(-a,a);camera.position.y+=rnd(-a,a)*0.6;camera.rotation.z+=rnd(-a,a)*0.05;shakeAmt*=Math.exp(-7*dt);} else shakeAmt=0;
   sun.position.set(camLook.x+10,24,camLook.z+12); sun.target.position.set(camLook.x,0,camLook.z); sun.target.updateMatrixWorld();
 }
@@ -2917,7 +3077,7 @@ function frame(now){
       if(out){ch.body.position.set(clamp(q.x,-10,10),1.2,clamp(q.z,-12,12));ch.body.velocity.set(0,0,0);}}
   }
   gameLogic(dt); updPuddles(dt); updFiresVis(dt,now/1000); updSprayVis(dt);
-  if(state==='lobby') lobbyLogic(dt);
+  if(state==='lobby'){lobbyLogic(dt);toysLogic(dt);}
   if(state==='end'&&isHost()&&NET.endT>0){NET.endT-=dt;if(NET.endT<=0)toRoom();}
   if(isHost()){NET.sendT-=dt;if(NET.sendT<=0){NET.sendT=1/20;send({t:'etat',d:buildSnap()});}}
   renderCommon(dt,now);
@@ -2928,8 +3088,8 @@ const fontsReady=document.fonts?Promise.race([Promise.all([document.fonts.load('
 applyOpt();
 loadGoof();
 // Accès de débogage (uniquement avec ?debug=1 dans l'adresse)
-try{if(/debug=1/.test(location.search))window.QB={get player(){return player},chars,camera,scene,GOOF,renderer,makeCharMesh,lookOf,save,applyLook,enterRoom,start,get state(){return state}};}catch(e){}
-fontsReady.catch(()=>{}).then(()=>{buildWorld();buildWorkshop();buildRoom();fixDecals();resetGame();placeInRoom(player,0);requestAnimationFrame(t=>{last=t;frame(t);});});
+try{if(/debug=1/.test(location.search))window.QB={get player(){return player},chars,camera,scene,GOOF,renderer,makeCharMesh,lookOf,save,applyLook,enterRoom,start,get state(){return state},props,tryGrab,throwHeld,punch,HOOP,get hoopScore(){return hoopScore},get camYaw(){return camYaw}};}catch(e){}
+fontsReady.catch(()=>{}).then(()=>{buildWorld();buildWorkshop();buildRoom();buildToys();fixDecals();resetGame();placeInRoom(player,0);ensureToys();requestAnimationFrame(t=>{last=t;frame(t);});});
 })();
 </script>
 </body>
