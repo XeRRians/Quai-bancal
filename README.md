@@ -31,6 +31,16 @@ Si `goofball.glb` ne se charge pas, le jeu reprend les anciens bonshommes.
 - **Bouteille d'hélium** : une au vestiaire, une en salle de pause. Prends-la puis *Gonfler* devant un collègue (même assommé) : il gonfle et flotte 15 s. S'il n'y a personne devant toi, c'est toi qui respires. Attrape sa ficelle avec *Prendre* pour le promener comme un ballon. Gonfler un collègue devant le patron, c'est une bêtise (le patron, c'est encore pire).
 - **Décors 3D** : `ballon.glb`, `banc.glb`, `casier.glb`, `chariot.glb`, `panier.glb`, `tableau.glb` remplacent les formes simples (le chariot lève ses vraies fourches). S'ils ne se chargent pas, le jeu garde les formes simples ; la physique ne change pas.
 
+## Arène du quai (mode bagarre)
+
+- **Lancer** : au vestiaire, *Tableau des nuits* → *Arène du quai*, puis tout le monde devant la grande porte.
+- **Règles** : 5 manches. Assomme (3 droites), attrape, et jette les autres à l'eau. Celui qui a touché la victime en dernier (droite, prise, lancer, objet) marque **1 point**, le **dernier debout** aussi. Tombé à l'eau = éliminé jusqu'à la manche suivante (on barbote, impossible de remonter). Égalité en tête après la 5e manche : prolongation (4 au maximum).
+- **Récompenses** : 250 / 150 / 90 / 50 / 30 € selon le classement, plus 10 € par point, ajoutés aux économies de chacun.
+- **Pièges** : tapis roulants qui poussent vers les coins, bouées qui font rebondir, deux trampolines (dont un pour sauter sur la plateforme de droite), passerelle cassée, et dès la manche 2 le conteneur de la grue qui balaie le plancher.
+- **Objets à lancer** : barils, cônes, pneus, cartons, caisses de poisson, et une bouteille d'hélium.
+- Le patron fait l'arbitre depuis le quai de pierre. En solo, Gérard et Kévin se battent pour de vrai.
+- Fichiers : `arene_*.glb` (objets), `arene_zone.png` (dalle centrale), `logo.png` (menu et mur de l'arène).
+
 ## Musiques, chapeaux, poule
 
 - **Musiques** : `musique_principale.mp3` (vestiaire et service), `musique_evenement.mp3` (pendant un événement), `fin_de_service.mp3` (écran de fin). Elles se lancent au premier clic ; sans elles, la petite boucle synthétique reprend.
