@@ -9,7 +9,7 @@ const { WebSocketServer } = require('ws');
 
 const PORT = process.env.PORT || 3000;
 // Fichiers servis au navigateur (tout est à la racine du dépôt pour pouvoir l'envoyer depuis un téléphone)
-const PUBLICS = new Set(['/index.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png', '/goofball.glb', '/ballon.glb', '/banc.glb', '/casier.glb', '/chariot.glb', '/panier.glb', '/tableau.glb', '/chapeau_bob.glb', '/chapeau_paille.glb', '/chapeau_steampunk.glb', '/chapeau_magicien.glb', '/chapeau_sorciere.glb', '/chapeau_rapiece.glb', '/musique_principale.mp3', '/musique_evenement.mp3', '/fin_de_service.mp3', '/sfx_droite.mp3', '/sfx_poule.mp3', '/poule.glb']);
+const PUBLICS = new Set(['/index.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png', '/goofball.glb', '/ballon.glb', '/banc.glb', '/casier.glb', '/chariot.glb', '/panier.glb', '/tableau.glb', '/chapeau_bob.glb', '/chapeau_paille.glb', '/chapeau_steampunk.glb', '/chapeau_magicien.glb', '/chapeau_sorciere.glb', '/chapeau_rapiece.glb', '/musique_principale.mp3', '/musique_evenement.mp3', '/fin_de_service.mp3', '/sfx_droite.mp3', '/sfx_poule.mp3', '/poule.glb', '/logo.png', '/arene_zone.png', '/arene_baril.glb', '/arene_cone.glb', '/arene_pneu.glb', '/arene_carton.glb', '/arene_caisse_poisson.glb', '/arene_pneu_suspendu.glb']);
 const MAX_JOUEURS = 8;
 const TAILLE_MAX_MESSAGE = 64 * 1024;
 

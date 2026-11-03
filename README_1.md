@@ -1,0 +1,101 @@
+# Quai Bancal
+
+Jeu d'entrepôt multijoueur à physique bancale, jouable dans le navigateur et sur téléphone.
+Livre les colis sur le bon quai, embête tes collègues quand le patron a le dos tourné, et finis le service avec la meilleure note.
+
+- Jusqu'à **8 joueurs** par partie, avec un code à 4 lettres.
+- Gérard et Kévin, deux intérimaires pilotés par l'IA, peuvent compléter l'équipe.
+- Mode solo disponible sans connexion au serveur.
+
+## Le Goofball
+
+Les personnages utilisent `goofball.glb` (modèle Meshy + animations Mixamo). Le jeu choisit l'animation selon ce que fait le perso
+(repos, marche, course, porter, pousser, lancer, droite, coup reçu, étourdi, boire, conduire, saut) et ajoute un ballottement mou par-dessus.
+La couleur achetée en boutique teinte le corps ; chapeaux et accessoires s'accrochent aux os de la tête et du torse.
+
+**Roue d'emotes** : bouton ☺ ou touche **T** (puis 1 à 6 au clavier). On danse jusqu'à ce qu'on bouge… et danser sous les yeux du patron, c'est une bêtise.
+
+Si `goofball.glb` ne se charge pas, le jeu reprend les anciens bonshommes.
+
+## Vues et vestiaire
+
+- **Trois vues** (bouton VUE, touche **V**, ou dans les options) : de haut, rapprochée, et de derrière façon GTA.
+  En vue de derrière, le joystick suit la caméra ; glisse le doigt (ou la souris) ailleurs sur l'écran pour tourner autour.
+- **Jouets du vestiaire** : panier de basket (3 ballons, tir automatique en cloche si tu vises le panier, compteur au mur),
+  sac de frappe qui se balance quand on le cogne, et trampoline.
+
+## Hélium, couleurs et décors
+
+- **Couleurs et yeux gratuits** : onglets *Couleur* (12 teintes) et *Yeux* (9 couleurs) dans les casiers, tout est offert.
+- **La langue pendouille** : deux os sont ajoutés à la langue au chargement du modèle, puis une petite simulation la fait ballotter (rien à changer dans `goofball.glb`).
+- **Bouteille d'hélium** : une au vestiaire, une en salle de pause. Prends-la puis *Gonfler* devant un collègue (même assommé) : il gonfle et flotte 15 s. S'il n'y a personne devant toi, c'est toi qui respires. Attrape sa ficelle avec *Prendre* pour le promener comme un ballon. Gonfler un collègue devant le patron, c'est une bêtise (le patron, c'est encore pire).
+- **Décors 3D** : `ballon.glb`, `banc.glb`, `casier.glb`, `chariot.glb`, `panier.glb`, `tableau.glb` remplacent les formes simples (le chariot lève ses vraies fourches). S'ils ne se chargent pas, le jeu garde les formes simples ; la physique ne change pas.
+
+## Arène du quai (mode bagarre)
+
+- **Lancer** : au vestiaire, *Tableau des nuits* → *Arène du quai*, puis tout le monde devant la grande porte.
+- **Règles** : 5 manches. Assomme (3 droites), attrape, et jette les autres à l'eau. Celui qui a touché la victime en dernier (droite, prise, lancer, objet) marque **1 point**, le **dernier debout** aussi. Tombé à l'eau = éliminé jusqu'à la manche suivante (on barbote, impossible de remonter). Égalité en tête après la 5e manche : prolongation (4 au maximum).
+- **Récompenses** : 250 / 150 / 90 / 50 / 30 € selon le classement, plus 10 € par point, ajoutés aux économies de chacun.
+- **Pièges** : tapis roulants qui poussent vers les coins, bouées qui font rebondir, deux trampolines (dont un pour sauter sur la plateforme de droite), passerelle cassée, et dès la manche 2 le conteneur de la grue qui balaie le plancher.
+- **Objets à lancer** : barils, cônes, pneus, cartons, caisses de poisson, et une bouteille d'hélium.
+- Le patron fait l'arbitre depuis le quai de pierre. En solo, Gérard et Kévin se battent pour de vrai.
+- Fichiers : `arene_*.glb` (objets), `arene_zone.png` (dalle centrale), `logo.png` (menu et mur de l'arène).
+
+## Musiques, chapeaux, poule
+
+- **Musiques** : `musique_principale.mp3` (vestiaire et service), `musique_evenement.mp3` (pendant un événement), `fin_de_service.mp3` (écran de fin). Elles se lancent au premier clic ; sans elles, la petite boucle synthétique reprend.
+- **Bruitages** : `sfx_droite.mp3` (coups de poing) et `sfx_poule.mp3` (les « cot »).
+- **Chapeaux 3D** : `chapeau_bob`, `chapeau_paille`, `chapeau_magicien`, `chapeau_rapiece`, `chapeau_sorciere`, `chapeau_steampunk` (.glb), chargés seulement quand quelqu'un en porte ou en essaie un.
+- **Essayage** : dans les casiers, *Essayer* (ou toucher la carte) montre l'objet sur l'aperçu, même sans les sous. L'aperçu reste visible en faisant défiler.
+- **La poule** (`poule.glb`) : les poules en vrac marchent pour de vrai et regardent où elles vont.
+
+## L'atelier
+
+Les objets en vrac (vase, télé, poule, bocal, ordi) arrivent sans carton :
+
+1. **Table d'emballage** : pose l'objet sur la table du bon matériau (papier bulle, caisse ajourée ou polystyrène) et tape vite pour scotcher. Mauvais matériau = colis fragile.
+2. **Étiqueteuse** : reste une demi-seconde sur la dalle de la destination, pose le colis, puis imprime.
+3. **Quai** : livre-le au quai de son étiquette. Vérifie qu'elle correspond au bon de commande, sinon c'est toi qui paies !
+
+## Comment ça marche
+
+- `index.html` : tout le jeu (Three.js + cannon.js chargés depuis un CDN).
+- `server.js` : petit serveur Node qui sert la page et relaie les messages entre joueurs.
+  Le téléphone de l'**hôte** calcule la physique, le patron et l'argent ; les autres reçoivent l'état environ 12 fois par seconde et envoient leurs commandes.
+- `render.yaml` : configuration du service sur Render.
+
+## Mettre en ligne sur Render (offre gratuite)
+
+1. Sur [render.com](https://render.com), crée un compte et relie ton GitHub.
+2. **New → Web Service**, choisis le dépôt `Quai-bancal`.
+3. Réglages :
+   - Runtime : **Node**
+   - Build Command : `npm install`
+   - Start Command : `npm start`
+   - Instance Type : **Free**
+   - Région : Frankfurt (la plus proche de la France)
+4. Valide : au bout de quelques minutes, le jeu est en ligne sur une adresse du type `https://quai-bancal.onrender.com`.
+
+Chaque nouveau commit sur la branche principale redéploie le jeu automatiquement.
+
+> Offre gratuite : le service s'endort après 15 minutes sans activité. Le premier qui ouvre le lien attend environ une minute, ensuite tout le monde joue normalement.
+
+## Jouer à plusieurs
+
+1. Ouvre l'adresse du jeu et **entre dans le vestiaire**.
+2. Va au **tableau des collègues**, écris ton pseudo, puis **Créer une partie**.
+3. **Copier le lien** et envoie-le à tes potes (ou donne-leur le code à 4 lettres).
+4. Choisis la nuit au **tableau des nuits**, passe aux **casiers** pour ta tenue.
+5. Tout le monde devant la **grande porte** : elle s'ouvre au bout de 3 secondes et le service commence.
+
+Astuce : sur téléphone, « Ajouter à l'écran d'accueil » pour jouer en plein écran comme une vraie appli.
+
+## Tester en local
+
+```bash
+npm install
+npm start
+# puis ouvrir http://localhost:3000
+```
+
+Pour viser un autre serveur multi : `index.html?serveur=wss://mon-serveur/ws`.
